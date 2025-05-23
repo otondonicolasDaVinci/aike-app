@@ -1,32 +1,23 @@
 package com.tesis.aike.data.remote.api
 
-// Imports para ChatRequest y ChatResponse
-
+import com.tesis.aike.data.remote.dto.AuthRequest
+import com.tesis.aike.data.remote.dto.AuthResponse
 import com.tesis.aike.data.remote.dto.ChatRequest
 import com.tesis.aike.data.remote.dto.ChatResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.header // Import para la función header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders // Import para HttpHeaders.Authorization
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
-
-// 1. MODIFICACIÓN CLAVE: Asegúrate de que tu data class ChatRequest use "prompt"
-//    Si ChatRequest está en otro archivo (ej. NetworkModels.kt), haz este cambio allí.
-//    Si no, y la tienes definida aquí mismo o la vas a definir, debe ser así:
-//
-//    import kotlinx.serialization.Serializable // Si defines ChatRequest aquí
-//
-//    @Serializable
-//    data class ChatRequest(
-//        val prompt: String // <--- CAMBIO IMPORTANTE: de "pregunta" a "prompt"
-//    )
 
 class ChatApiService {
 
@@ -40,34 +31,64 @@ class ChatApiService {
         }
     }
 
-    // Mantén tu endpointUrl como lo tienes configurado
-    private val endpointUrl = "http://localhost:8082/v1/aike/ia/text/prompt"
+    // URLs de los Endpoints
+    private val authLoginUrl = "http://10.0.2.2:8082/auth/login"
+    private val chatEndpointUrl = "http://10.0.2.2:8082/v1/aike/ia/text/prompt"
 
-    suspend fun sendMessage(userInput: String): ChatResponse? { // Cambiamos el nombre del parámetro a userInput para claridad
+    // Función para el login con el backend
+    suspend fun loginUser(authRequest: AuthRequest): AuthResponse? {
         return try {
-            // 2. Crea el objeto de la petición usando la clave "prompt"
-            val requestPayload = ChatRequest(prompt = userInput) // Usamos el parámetro 'userInput'
-
-            val response: HttpResponse = client.post(endpointUrl) {
+            val response: HttpResponse = client.post(authLoginUrl) {
                 contentType(ContentType.Application.Json)
-                setBody(requestPayload)
+                setBody(authRequest)
             }
 
             if (response.status == HttpStatusCode.OK) {
-                val chatResponse = response.body<ChatResponse>()
-                chatResponse
+                response.body<AuthResponse>()
             } else {
-                println("Error en la respuesta del servidor: ${response.status.value} - ${response.status.description}")
+                println("Error en login con backend: ${response.status.value} - ${response.status.description}")
                 null
             }
         } catch (e: Exception) {
-            println("Error al realizar la petición a '$endpointUrl': ${e.message}")
+            println("Excepción en loginUser: ${e.message}")
             e.printStackTrace()
             null
         }
     }
 
-    // fun close() {
-    //     client.close()
-    // }
+    // Función sendMessage MODIFICADA para aceptar y usar el token
+    suspend fun sendMessage(userInput: String, token: String?): ChatResponse? {
+        if (token == null) {
+            println("Error: Token de autenticación no proporcionado para sendMessage.")
+            // Considera devolver un tipo de error específico o lanzar una excepción aquí
+            // para un manejo más robusto en el ViewModel.
+            return null
+        }
+
+        return try {
+            val requestPayload = ChatRequest(prompt = userInput) // Usamos userInput para el campo prompt
+            val response: HttpResponse = client.post(chatEndpointUrl) {
+                contentType(ContentType.Application.Json)
+                // Añade la cabecera de Autorización con el Bearer Token
+                header(HttpHeaders.Authorization, "Bearer $token")
+                setBody(requestPayload)
+            }
+
+            if (response.status == HttpStatusCode.OK) {
+                response.body<ChatResponse>()
+            } else {
+                println("Error en la respuesta del servidor (chat): ${response.status.value} - ${response.status.description}")
+                // Puedes añadir manejo específico para ciertos códigos de error, como 401 (Unauthorized)
+                if (response.status == HttpStatusCode.Unauthorized || response.status == HttpStatusCode.Forbidden) {
+                    println("Token inválido o expirado. Intente iniciar sesión nuevamente.")
+                    // Aquí podrías tener lógica para invalidar el token guardado o pedir re-login.
+                }
+                null
+            }
+        } catch (e: Exception) {
+            println("Error al realizar la petición (chat) a '$chatEndpointUrl': ${e.message}")
+            e.printStackTrace()
+            null
+        }
+    }
 }

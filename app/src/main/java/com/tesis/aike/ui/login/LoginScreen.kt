@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Facebook
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator // Asegúrate de tener este import
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +31,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -43,21 +46,32 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp // Import para sp si usas MaterialTheme.typography.bodySmall
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.tesis.aike.AppRoutes
 import com.tesis.aike.R
+import com.tesis.aike.data.remote.api.ChatApiService // Asegúrate que esta ruta sea correcta
+import com.tesis.aike.data.remote.dto.AuthRequest // Asegúrate que esta ruta sea correcta
 import com.tesis.aike.ui.theme.AikeTheme
+import com.tesis.aike.util.TokenManager // Asegúrate que esta ruta sea correcta
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
-    // Cambiamos 'email' por 'username' para mayor claridad
     var username by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
-    var loginError by rememberSaveable { mutableStateOf<String?>(null) } // Estado para mensaje de error
+    var loginError by rememberSaveable { mutableStateOf<String?>(null) }
+    var isLoading by rememberSaveable { mutableStateOf(false) }
 
-    val context = LocalContext.current // Contexto para mostrar Toasts
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    // Es buena práctica crear la instancia del servicio una sola vez.
+    // Si LoginScreen se recompone mucho, esto podría ser ineficiente.
+    // Considera proveerlo a través de un ViewModel o inyección de dependencias en el futuro.
+    val chatApiService = remember { ChatApiService() }
+
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
@@ -68,6 +82,11 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
         ) {
             Spacer(modifier = Modifier.height(32.dp))
 
+            // He comentado la imagen aquí porque ya tienes un Text "Inicie Sesión"
+            // Si quieres el logo Y el texto, puedes ajustar el espaciado.
+            // Si quieres SOLO el logo, quita el Text de abajo.
+            // Si quieres SOLO el texto, quita la Imagen.
+            // Por ahora, dejo ambos para que decidas.
             Text(
                 text = "Inicie sesión",
                 style = MaterialTheme.typography.headlineLarge,
@@ -75,50 +94,47 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
             )
 
             Image(
-                painter = painterResource(id = R.drawable.aike_logo),
+                painter = painterResource(id = R.drawable.aike_logo), // Asegúrate que aike_logo exista
                 contentDescription = "Logo de la aplicación",
-                modifier = Modifier.height(100.dp)
+                modifier = Modifier.height(100.dp) // Puedes ajustar el tamaño
             )
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(24.dp)) // Reduje un poco este Spacer
 
-            // Campo de Usuario
             OutlinedTextField(
                 value = username,
                 onValueChange = {
                     username = it
-                    loginError = null // Borra el error al escribir
+                    loginError = null
                 },
-                label = { Text("Usuario") }, // Etiqueta cambiada
+                label = { Text("Usuario") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text) // Tipo de teclado general
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Campo de Contraseña
             OutlinedTextField(
                 value = password,
                 onValueChange = {
                     password = it
-                    loginError = null // Borra el error al escribir
+                    loginError = null
                 },
                 label = { Text("Password") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                isError = loginError != null // Marca el campo si hay error general
+                isError = loginError != null
             )
 
-            // Mostrar mensaje de error si existe
             loginError?.let {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = it,
                     color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodySmall, // Asegúrate que bodySmall esté definido o usa otra tipografía
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center
                 )
@@ -134,7 +150,9 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                     .fillMaxWidth()
                     .wrapContentWidth(Alignment.End)
                     .clickable {
-                        Toast.makeText(context, "Funcionalidad no implementada", Toast.LENGTH_SHORT).show()
+                        Toast
+                            .makeText(context, "Funcionalidad no implementada", Toast.LENGTH_SHORT)
+                            .show()
                         println("Forgot password clicked!")
                     }
                     .padding(vertical = 4.dp)
@@ -142,7 +160,6 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Botón "Continue with Google" (acción deshabilitada o placeholder)
             Button(
                 onClick = { Toast.makeText(context, "Inicio con Google no implementado", Toast.LENGTH_SHORT).show() },
                 modifier = Modifier.fillMaxWidth(),
@@ -169,7 +186,6 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Botón "Continue with Facebook" (acción deshabilitada o placeholder)
             Button(
                 onClick = { Toast.makeText(context, "Inicio con Facebook no implementado", Toast.LENGTH_SHORT).show() },
                 modifier = Modifier.fillMaxWidth(),
@@ -196,27 +212,33 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Botón "Iniciar sesión" con lógica "admin/admin"
             Button(
                 onClick = {
-                    if (username == "admin" && password == "admin") { // username es la variable de estado que contiene el input del usuario
+                    if (username == "admin" && password == "admin") {
+                        isLoading = true
                         loginError = null
-                        Toast.makeText(context, "¡Inicio de sesión exitoso!", Toast.LENGTH_SHORT).show()
-                        println("Login successful: User '$username'") // Usamos el valor del campo de texto "Usuario"
+                        coroutineScope.launch {
+                            val authRequest = AuthRequest(userId = "1", password = "123456")
+                            val authResponse = chatApiService.loginUser(authRequest)
 
-                        // Navegar a HomeScreen pasando el nombre de usuario
-                        navController.navigate(AppRoutes.homeScreenWithUsername(username)) { // Usa la función helper
-                            popUpTo(AppRoutes.LOGIN_SCREEN) {
-                                inclusive = true
+                            isLoading = false // Asegúrate de poner esto ANTES de cualquier return o navegación
+                            if (authResponse != null && authResponse.token.isNotBlank()) {
+                                TokenManager.saveToken(context, authResponse.token)
+                                println("Token guardado: ${authResponse.token}")
+                                navController.navigate(AppRoutes.homeScreenWithUsername(username)) {
+                                    popUpTo(AppRoutes.LOGIN_SCREEN) { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                            } else {
+                                loginError = "Error de autenticación con el servidor."
+                                println("Login con API fallido o token vacío.")
                             }
-                            launchSingleTop = true
                         }
                     } else {
-                        // Error en las credenciales
-                        loginError = "Usuario o contraseña incorrectos."
-                        println("Login failed: Incorrect credentials")
+                        loginError = "Usuario o contraseña de app incorrectos."
                     }
                 },
+                enabled = !isLoading,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF6B7280),
@@ -224,7 +246,16 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                 ),
                 shape = MaterialTheme.shapes.medium
             ) {
-                Text(text = "Iniciar sesión", style = MaterialTheme.typography.titleMedium)
+                // Muestra el CircularProgressIndicator dentro del botón cuando isLoading es true
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp), // Ajusta el tamaño según necesites
+                        color = Color.White, // Color del indicador
+                        strokeWidth = 2.dp // Grosor del indicador
+                    )
+                } else {
+                    Text(text = "Iniciar sesión", style = MaterialTheme.typography.titleMedium)
+                }
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -244,7 +275,9 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.clickable {
-                        Toast.makeText(context, "Funcionalidad no implementada", Toast.LENGTH_SHORT).show()
+                        Toast
+                            .makeText(context, "Funcionalidad no implementada", Toast.LENGTH_SHORT)
+                            .show()
                         println("Regístrese en la web clicked!")
                     }
                 )
@@ -258,7 +291,6 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
 @Composable
 fun LoginScreenPreview() {
     AikeTheme {
-        // Para el preview, puedes pasar un NavController "falso" usando rememberNavController()
-        LoginScreen(navController = rememberNavController()) // <--- AÑADE navController AQUÍ
+        LoginScreen(navController = rememberNavController())
     }
 }

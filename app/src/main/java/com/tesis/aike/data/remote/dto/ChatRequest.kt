@@ -1,8 +1,8 @@
 package com.tesis.aike.data.remote.dto // O el paquete donde la tengas
 
-import kotlinx.serialization.Serializable // <--- ¡ASEGÚRATE DE TENER ESTE IMPORT!
+import kotlinx.serialization.Serializable // <-- VERIFICA ESTE IMPORT
 
-@Serializable // <--- ¡ESTA ANOTACIÓN ES CRUCIAL Y DEBE ESTAR JUSTO ENCIMA DE LA CLASE!
+@Serializable // <-- VERIFICA ESTA ANOTACIÓN
 data class ChatRequest(
-    val prompt: String // Como lo habíamos modificado para tu backend
+    val prompt: String
 )
