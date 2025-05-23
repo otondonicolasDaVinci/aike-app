@@ -1,7 +1,9 @@
-package com.tesis.aike // O tu paquete
+package com.tesis.aike.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tesis.aike.data.remote.api.ChatApiService
+import com.tesis.aike.domain.model.ChatMessage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -45,7 +47,10 @@ class ChatViewModel : ViewModel() {
                 } else {
                     // Manejar respuesta nula del servicio (error ya logueado en el servicio)
                     _messages.update { currentMessages ->
-                        currentMessages + ChatMessage("Error: No se recibió respuesta del servidor.", false)
+                        currentMessages + ChatMessage(
+                            "Error: No se recibió respuesta del servidor.",
+                            false
+                        )
                     }
                     _errorMessage.value = "No se pudo obtener respuesta del servidor."
                 }

@@ -1,4 +1,4 @@
-package com.tesis.aike // O el paquete donde la tengas
+package com.tesis.aike.data.remote.dto // O el paquete donde la tengas
 
 import kotlinx.serialization.Serializable // <--- ¡ASEGÚRATE DE TENER ESTE IMPORT!
 

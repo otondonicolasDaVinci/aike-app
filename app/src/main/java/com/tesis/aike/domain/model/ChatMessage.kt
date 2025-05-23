@@ -1,4 +1,4 @@
-package com.tesis.aike
+package com.tesis.aike.domain.model
 
 data class ChatMessage(
     val text: String,

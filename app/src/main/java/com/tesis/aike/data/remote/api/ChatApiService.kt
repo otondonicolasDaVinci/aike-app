@@ -1,17 +1,20 @@
-package com.tesis.aike
+package com.tesis.aike.data.remote.api
 
 // Imports para ChatRequest y ChatResponse
-import com.tesis.aike.ChatRequest
-import com.tesis.aike.ChatResponse
 
-import io.ktor.client.*
+import com.tesis.aike.data.remote.dto.ChatRequest
+import com.tesis.aike.data.remote.dto.ChatResponse
+import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
+import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
 // 1. MODIFICACIÓN CLAVE: Asegúrate de que tu data class ChatRequest use "prompt"

@@ -1,7 +1,5 @@
 package com.tesis.aike
 
-// Importa LoginScreen (ya lo tenías)
-import com.tesis.aike.LoginScreen
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -16,13 +14,14 @@ import androidx.compose.material3.MaterialTheme // Import necesario
 import androidx.compose.material3.Surface // Import necesario
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview // Para el Preview de AppNavigation
 import androidx.navigation.NavHostController // Import para NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost // Import para NavHost
 import androidx.navigation.compose.composable // Import para composable
 import androidx.navigation.compose.rememberNavController // Import para rememberNavController
 import androidx.navigation.navArgument
+import com.tesis.aike.ui.home.HomeScreen
+import com.tesis.aike.ui.login.LoginScreen
 import com.tesis.aike.ui.theme.AikeTheme
 
 object AppRoutes {
@@ -74,7 +73,10 @@ fun AppNavigation() {
             // Extrae el argumento de username
             val username = backStackEntry.arguments?.getString(AppRoutes.USERNAME_ARG)
             if (username != null) {
-                HomeScreen(navController = navController, username = username) // Pasa el username a HomeScreen
+                HomeScreen(
+                    navController = navController,
+                    username = username
+                ) // Pasa el username a HomeScreen
             } else {
                 // Manejar el caso donde el username es nulo
                 androidx.compose.material3.Text("Error: Nombre de usuario no encontrado.")
