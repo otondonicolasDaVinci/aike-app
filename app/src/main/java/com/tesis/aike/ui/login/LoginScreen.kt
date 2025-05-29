@@ -214,14 +214,14 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
 
             Button(
                 onClick = {
-                    if (username == "admin" && password == "admin") {
+                    if (!username.isEmpty() && !password.isEmpty()) {
                         isLoading = true
                         loginError = null
                         coroutineScope.launch {
-                            val authRequest = AuthRequest(userId = "1", password = "123456")
+                            val authRequest = AuthRequest(user = username, password = password)
                             val authResponse = chatApiService.loginUser(authRequest)
 
-                            isLoading = false // Asegúrate de poner esto ANTES de cualquier return o navegación
+                            isLoading = false
                             if (authResponse != null && authResponse.token.isNotBlank()) {
                                 TokenManager.saveToken(context, authResponse.token)
                                 println("Token guardado: ${authResponse.token}")
