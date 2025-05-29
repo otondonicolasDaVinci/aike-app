@@ -1,49 +1,70 @@
 package com.tesis.aike
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-// El import de padding no se usa directamente aquí ahora, pero puede ser útil
-// import androidx.compose.foundation.layout.padding
-// Scaffold y Text no se usan directamente aquí ahora
-// import androidx.compose.material3.Scaffold
-// import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme // Import necesario
-import androidx.compose.material3.Surface // Import necesario
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavHostController // Import para NavHostController
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost // Import para NavHost
-import androidx.navigation.compose.composable // Import para composable
-import androidx.navigation.compose.rememberNavController // Import para rememberNavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navigation
 import com.tesis.aike.ui.home.HomeScreen
 import com.tesis.aike.ui.login.LoginScreen
+import com.tesis.aike.ui.profile.ProfileScreen
+import com.tesis.aike.ui.qrcode.QrCodeScreen
+import com.tesis.aike.ui.reservation.ReservationScreen
 import com.tesis.aike.ui.theme.AikeTheme
 
 object AppRoutes {
-    const val LOGIN_SCREEN = "login"
-    private const val HOME_SCREEN_ROUTE = "home"
     const val USERNAME_ARG = "username"
-    const val HOME_SCREEN = "$HOME_SCREEN_ROUTE/{$USERNAME_ARG}"
 
-    fun homeScreenWithUsername(username: String) = "$HOME_SCREEN_ROUTE/$username"
+    const val LOGIN_ROUTE = "login_flow"
+    const val MAIN_APP_GRAPH_ROUTE = "main_app_graph"
+
+    private const val HOME_ROUTE_BASE = "home"
+    const val HOME_SCREEN_WITH_ARG = "$HOME_ROUTE_BASE/{$USERNAME_ARG}"
+
+    private const val QR_CODE_ROUTE_BASE = "qrcode"
+    const val QR_CODE_SCREEN_WITH_ARG = "$QR_CODE_ROUTE_BASE/{$USERNAME_ARG}"
+
+    private const val PROFILE_ROUTE_BASE = "profile"
+    const val PROFILE_SCREEN_WITH_ARG = "$PROFILE_ROUTE_BASE/{$USERNAME_ARG}"
+
+    private const val RESERVATION_ROUTE_BASE = "reservation"
+    const val RESERVATION_SCREEN_WITH_ARG = "$RESERVATION_ROUTE_BASE/{$USERNAME_ARG}"
+
+    fun homeScreenWithUsername(username: String) = "$HOME_ROUTE_BASE/$username"
+    fun qrCodeScreenWithUsername(username: String) = "$QR_CODE_ROUTE_BASE/$username"
+    fun profileScreenWithUsername(username: String) = "$PROFILE_ROUTE_BASE/$username"
+    fun reservationScreenWithUsername(username: String) = "$RESERVATION_ROUTE_BASE/$username"
+
+    val HOME_BASE = HOME_ROUTE_BASE
+    val QR_CODE_BASE = QR_CODE_ROUTE_BASE
+    val PROFILE_BASE = PROFILE_ROUTE_BASE
+    val RESERVATION_BASE = RESERVATION_ROUTE_BASE
 }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge() // Mantienes esto si lo deseas para el diseño de borde a borde
+        enableEdgeToEdge()
         setContent {
             AikeTheme {
-                Surface( // Es buena práctica envolver con Surface para el tema
+                Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // 2. LLAMA A TU FUNCIÓN DE NAVEGACIÓN PRINCIPAL
                     AppNavigation()
                 }
             }
@@ -51,36 +72,74 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// 3. CREA TU FUNCIÓN COMPOSABLE PARA LA NAVEGACIÓN
 @Composable
 fun AppNavigation() {
     val navController: NavHostController = rememberNavController()
 
     NavHost(
         navController = navController,
-        startDestination = AppRoutes.LOGIN_SCREEN // Pantalla inicial
+        startDestination = AppRoutes.LOGIN_ROUTE
     ) {
-        composable(route = AppRoutes.LOGIN_SCREEN) {
-            // Llama a LoginScreen, pasándole el navController
-            // Asumo que tu LoginScreen ya está modificada para aceptar NavController
+        composable(route = AppRoutes.LOGIN_ROUTE) {
             LoginScreen(navController = navController)
         }
 
-        composable(
-            route = AppRoutes.HOME_SCREEN, // Usa la ruta con el placeholder: "home/{username}"
-            arguments = listOf(navArgument(AppRoutes.USERNAME_ARG) { type = NavType.StringType }) // Define el argumento
-        ) { backStackEntry ->
-            // Extrae el argumento de username
-            val username = backStackEntry.arguments?.getString(AppRoutes.USERNAME_ARG)
-            if (username != null) {
-                HomeScreen(
-                    navController = navController,
-                    username = username
-                ) // Pasa el username a HomeScreen
-            } else {
-                // Manejar el caso donde el username es nulo
-                androidx.compose.material3.Text("Error: Nombre de usuario no encontrado.")
+        navigation(
+            startDestination = AppRoutes.HOME_SCREEN_WITH_ARG,
+            route = AppRoutes.MAIN_APP_GRAPH_ROUTE
+        ) {
+            composable(
+                route = AppRoutes.HOME_SCREEN_WITH_ARG,
+                arguments = listOf(navArgument(AppRoutes.USERNAME_ARG) { type = NavType.StringType })
+            ) { backStackEntry ->
+                val username = backStackEntry.arguments?.getString(AppRoutes.USERNAME_ARG)
+                if (username != null) {
+                    HomeScreen(navController = navController, username = username)
+                } else {
+                    Text("Error: Nombre de usuario no encontrado para Home.")
+                }
             }
-        } // <--- ESTA LLAVE DE CIERRE DEL composable(AppRoutes.HOME_SCREEN) ESTABA BIEN
-    } // <--- ESTA ES LA LLAVE DE CIERRE QUE FALTABA PARA EL NavHost
+            composable(
+                route = AppRoutes.QR_CODE_SCREEN_WITH_ARG,
+                arguments = listOf(navArgument(AppRoutes.USERNAME_ARG) { type = NavType.StringType })
+            ) { backStackEntry ->
+                val username = backStackEntry.arguments?.getString(AppRoutes.USERNAME_ARG)
+                if (username != null) {
+                    QrCodeScreen(navController = navController, username = username)
+                } else {
+                    Text("Error: Nombre de usuario no encontrado para QR.")
+                }
+            }
+            composable(
+                route = AppRoutes.PROFILE_SCREEN_WITH_ARG,
+                arguments = listOf(navArgument(AppRoutes.USERNAME_ARG) { type = NavType.StringType })
+            ) { backStackEntry ->
+                val username = backStackEntry.arguments?.getString(AppRoutes.USERNAME_ARG)
+                if (username != null) {
+                    ProfileScreen(navController = navController, username = username)
+                } else {
+                    Text("Error: Nombre de usuario no encontrado para Perfil.")
+                }
+            }
+            composable(
+                route = AppRoutes.RESERVATION_SCREEN_WITH_ARG,
+                arguments = listOf(navArgument(AppRoutes.USERNAME_ARG) { type = NavType.StringType })
+            ) { backStackEntry ->
+                val username = backStackEntry.arguments?.getString(AppRoutes.USERNAME_ARG)
+                if (username != null) {
+                    ReservationScreen(navController = navController, username = username)
+                } else {
+                    Text("Error: Nombre de usuario no encontrado para Reserva.")
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun DefaultPreview() {
+    AikeTheme {
+        AppNavigation()
+    }
 }

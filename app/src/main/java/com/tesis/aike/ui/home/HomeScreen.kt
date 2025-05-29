@@ -1,6 +1,7 @@
-package com.tesis.aike.ui.home // Asegúrate que sea tu paquete
+package com.tesis.aike.ui.home
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -39,7 +40,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -57,28 +57,85 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.tesis.aike.AppRoutes
 import com.tesis.aike.R
 import com.tesis.aike.domain.model.ChatMessage
 import com.tesis.aike.ui.theme.AikeTheme
 
-// Define los ítems de la barra de navegación inferior.
-sealed class BottomNavItem(val route: String, val icon: ImageVector, val labelForAccessibility: String) {
-    object Viking : BottomNavItem("viking_tab", Icons.Filled.Shield, "Principal Aike")
-    object Hut : BottomNavItem("hut_tab", Icons.Filled.Home, "Hogar")
-    object Key : BottomNavItem("key_tab", Icons.Filled.Key, "Claves")
-    object Bag : BottomNavItem("bag_tab", Icons.Filled.ShoppingBag, "Bolsa")
-    object Profile : BottomNavItem("profile_tab", Icons.Filled.Person, "Perfil")
+sealed class BottomNavItem(val routeId: String, val icon: ImageVector, val labelForAccessibility: String) {
+    object Viking : BottomNavItem(AppRoutes.HOME_BASE, Icons.Filled.Shield, "Principal Aike")
+    object Hut : BottomNavItem(AppRoutes.RESERVATION_BASE, Icons.Filled.Home, "Mi Reserva")
+    object Key : BottomNavItem(AppRoutes.QR_CODE_BASE, Icons.Filled.Key, "Claves QR")
+    object Bag : BottomNavItem("bag_tab_placeholder", Icons.Filled.ShoppingBag, "Bolsa")
+    object Profile : BottomNavItem(AppRoutes.PROFILE_BASE, Icons.Filled.Person, "Perfil")
+}
+
+@Composable
+fun AppBottomNavigationBar(
+    navController: NavController,
+    items: List<BottomNavItem>,
+    currentUsername: String,
+    onVikingTabAlreadyHome: () -> Unit
+) {
+    NavigationBar(
+        containerColor = Color(0xFF2C2C2C)
+    ) {
+        val navBackStackEntry by navController.currentBackStackEntryAsState()
+        val currentDestination = navBackStackEntry?.destination
+
+        items.forEach { item ->
+            val destinationRouteWithArg = when (item) {
+                BottomNavItem.Viking -> AppRoutes.homeScreenWithUsername(currentUsername)
+                BottomNavItem.Hut -> AppRoutes.reservationScreenWithUsername(currentUsername)
+                BottomNavItem.Key -> AppRoutes.qrCodeScreenWithUsername(currentUsername)
+                BottomNavItem.Profile -> AppRoutes.profileScreenWithUsername(currentUsername)
+                else -> item.routeId // Para placeholders
+            }
+
+            val isSelected = currentDestination?.hierarchy?.any { it.route == destinationRouteWithArg } == true
+
+            NavigationBarItem(
+                selected = isSelected,
+                onClick = {
+                    if (currentDestination?.route == destinationRouteWithArg) {
+                        if (item == BottomNavItem.Viking) {
+                            onVikingTabAlreadyHome()
+                        }
+                    } else if (!destinationRouteWithArg.contains("placeholder")) {
+                        navController.navigate(destinationRouteWithArg) {
+                            popUpTo(AppRoutes.MAIN_APP_GRAPH_ROUTE) { // Pop hasta el inicio del grafo anidado
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    } else {
+                        Log.d("AppBottomNav", "${item.labelForAccessibility} (${item.routeId}) clicked - Implementar navegación")
+                    }
+                },
+                icon = {
+                    Icon(
+                        imageVector = item.icon,
+                        contentDescription = item.labelForAccessibility,
+                        tint = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray
+                    )
+                },
+                alwaysShowLabel = false
+            )
+        }
+    }
 }
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun HomeScreen(
-    modifier: Modifier = Modifier, // El modifier que viene como parámetro a HomeScreen
+    modifier: Modifier = Modifier,
     navController: NavController,
     username: String
 ) {
-    var selectedItemIndex by rememberSaveable { mutableStateOf(0) }
     val bottomNavItems = listOf(
         BottomNavItem.Viking,
         BottomNavItem.Hut,
@@ -86,53 +143,44 @@ fun HomeScreen(
         BottomNavItem.Bag,
         BottomNavItem.Profile
     )
-    var showChatUi by rememberSaveable { mutableStateOf(false) }
+    val chatViewModel: ChatViewModel = viewModel()
+    val initialWelcomePending by chatViewModel.initialWelcomePending.collectAsStateWithLifecycle()
+    Log.d("HomeScreen", "Recomposing. initialWelcomePending: $initialWelcomePending, Username: $username")
 
     Scaffold(
         bottomBar = {
-            NavigationBar(
-                containerColor = Color(0xFF2C2C2C)
-            ) {
-                // ... (tu NavigationBarItems) ...
-                bottomNavItems.forEachIndexed { index, item ->
-                    NavigationBarItem(
-                        selected = selectedItemIndex == index,
-                        onClick = {
-                            selectedItemIndex = index
-                            println("${item.labelForAccessibility} clicked")
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = item.icon,
-                                contentDescription = item.labelForAccessibility,
-                                tint = if (selectedItemIndex == index) MaterialTheme.colorScheme.primary else Color.LightGray
-                            )
-                        },
-                        alwaysShowLabel = false
-                    )
+            AppBottomNavigationBar(
+                navController = navController,
+                items = bottomNavItems,
+                currentUsername = username,
+                onVikingTabAlreadyHome = {
+                    Log.d("HomeScreen", "onVikingTabAlreadyHome LLAMADO. initialWelcomePending actual: ${chatViewModel.initialWelcomePending.value}")
                 }
-            }
+            )
         }
     ) { innerPadding ->
         Box(
-            modifier = Modifier // Quitamos el modifier del parámetro aquí, lo usaremos dentro
+            modifier = Modifier
                 .fillMaxSize()
-                // 1. El Box ahora usa el color de fondo del tema por defecto
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
                 .clickable(
-                    enabled = !showChatUi,
-                    onClick = { showChatUi = true }
+                    enabled = initialWelcomePending,
+                    onClick = {
+                        if (initialWelcomePending) {
+                            Log.d("HomeScreen", "Box de Bienvenida CLICKEADO. Llamando a markInitialWelcomeAsShown()")
+                            chatViewModel.markInitialWelcomeAsShown()
+                        }
+                    }
                 ),
             contentAlignment = Alignment.Center
         ) {
-            if (!showChatUi) {
-                // --- CONTENIDO DE BIENVENIDA ---
+            if (initialWelcomePending) {
+                Log.d("HomeScreen", "Mostrando Welcome UI porque initialWelcomePending es TRUE")
                 Column(
-                    // 2. La Column de bienvenida AHORA establece su propio fondo oscuro
-                    modifier = Modifier // Usamos un Modifier nuevo para esta Column
+                    modifier = Modifier
                         .fillMaxSize()
-                        .background(Color(0xFF404040)) // Fondo oscuro específico para la bienvenida
+                        .background(Color(0xFF404040))
                         .padding(horizontal = 24.dp, vertical = 32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -157,10 +205,8 @@ fun HomeScreen(
                         fontWeight = FontWeight.Medium
                     )
                 }
-                // --- FIN CONTENIDO DE BIENVENIDA ---
             } else {
-                // --- INTERFAZ DEL CHAT ---
-                // ChatInterface se mostrará sobre el fondo predeterminado del Box (MaterialTheme.colorScheme.background)
+                Log.d("HomeScreen", "Mostrando ChatInterface porque initialWelcomePending es FALSE")
                 ChatInterface(modifier = Modifier.fillMaxSize())
             }
         }
@@ -169,34 +215,23 @@ fun HomeScreen(
 
 @Composable
 fun ChatInterface(modifier: Modifier = Modifier) {
-    // Obtén una instancia del ChatViewModel
     val viewModel: ChatViewModel = viewModel()
-
-    // Observa los StateFlows del ViewModel
-    val messages by viewModel.messages.collectAsStateWithLifecycle() // Lista de mensajes
-    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle() // Estado de carga
-    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle() // Mensaje de error
-
-    var messageText by rememberSaveable { mutableStateOf("") } // El texto del input se mantiene aquí por simplicidad
+    val messages by viewModel.messages.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
+    val messageInputText by viewModel.messageInputText.collectAsStateWithLifecycle()
 
     Column(modifier = modifier.fillMaxSize()) {
-        // 1. Área de mensajes
         LazyColumn(
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 8.dp, vertical = 8.dp),
-            reverseLayout = true // Mantiene los mensajes nuevos abajo
+            reverseLayout = true
         ) {
-            // Itera sobre la lista de mensajes del ViewModel
-            // Usamos .reversed() porque reverseLayout=true en LazyColumn espera que la lista original
-            // tenga los más nuevos al final para que aparezcan abajo.
-            // Si tu ViewModel ya añade los nuevos al final, entonces .reversed() aquí es correcto.
             items(messages.reversed()) { chatMessage ->
-                MessageBubble(chatMessage = chatMessage) // Usamos un Composable para cada burbuja de mensaje
+                MessageBubble(chatMessage = chatMessage)
             }
         }
-
-        // Indicador de carga
         if (isLoading) {
             CircularProgressIndicator(
                 modifier = Modifier
@@ -204,8 +239,6 @@ fun ChatInterface(modifier: Modifier = Modifier) {
                     .padding(vertical = 8.dp)
             )
         }
-
-        // Mensaje de error
         errorMessage?.let { error ->
             Text(
                 text = error,
@@ -215,11 +248,7 @@ fun ChatInterface(modifier: Modifier = Modifier) {
                     .padding(horizontal = 8.dp, vertical = 4.dp),
                 textAlign = TextAlign.Center
             )
-            // Podrías añadir un botón para descartar el error o reintentar
-            // Button(onClick = { viewModel.clearErrorMessage() }) { Text("Descartar") }
         }
-
-        // 2. Área de entrada de texto y botón de enviar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -227,8 +256,8 @@ fun ChatInterface(modifier: Modifier = Modifier) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             OutlinedTextField(
-                value = messageText,
-                onValueChange = { messageText = it },
+                value = messageInputText,
+                onValueChange = { viewModel.onMessageInputChanged(it) },
                 placeholder = {
                     Text("Escribe un mensaje...", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 },
@@ -244,47 +273,39 @@ fun ChatInterface(modifier: Modifier = Modifier) {
                     unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 ),
                 singleLine = true,
-                enabled = !isLoading // Deshabilitar input mientras carga
+                enabled = !isLoading
             )
-
             Spacer(modifier = Modifier.width(8.dp))
-
             IconButton(
                 onClick = {
-                    if (messageText.isNotBlank()) {
-                        viewModel.sendMessage(messageText) // Llama al ViewModel para enviar el mensaje
-                        messageText = "" // Limpiar el campo de texto
-                    }
+                    viewModel.sendMessage()
                 },
-                enabled = !isLoading // Deshabilitar botón mientras carga
+                enabled = !isLoading && messageInputText.isNotBlank()
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Send,
                     contentDescription = "Enviar mensaje",
-                    tint = if (isLoading) Color.Gray else MaterialTheme.colorScheme.primary
+                    tint = if (isLoading || messageInputText.isBlank()) Color.Gray else MaterialTheme.colorScheme.primary
                 )
             }
         }
     }
 }
 
-// Nuevo Composable para la burbuja del mensaje (puedes personalizarlo mucho más)
 @Composable
 fun MessageBubble(chatMessage: ChatMessage) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        // Alinea los mensajes del usuario a la derecha, los de la IA a la izquierda
         horizontalArrangement = if (chatMessage.isFromUser) Arrangement.End else Arrangement.Start
     ) {
         Card(
-            // Cambia el color de la burbuja según quién envía el mensaje
             colors = CardDefaults.cardColors(
                 containerColor = if (chatMessage.isFromUser) MaterialTheme.colorScheme.primaryContainer
                 else MaterialTheme.colorScheme.secondaryContainer
             ),
-            modifier = Modifier.widthIn(max = 300.dp) // Ancho máximo para las burbujas
+            modifier = Modifier.widthIn(max = 300.dp)
         ) {
             Text(
                 text = chatMessage.text,

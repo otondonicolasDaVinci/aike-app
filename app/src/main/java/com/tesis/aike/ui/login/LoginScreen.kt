@@ -1,6 +1,5 @@
-package com.tesis.aike.ui.login // Asegúrate que este sea tu package correcto
+package com.tesis.aike.ui.login
 
-// Iconos para los botones sociales (aunque no los usemos para loguear ahora, los dejamos por si acaso)
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -21,7 +20,7 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Facebook
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator // Asegúrate de tener este import
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -46,15 +45,14 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp // Import para sp si usas MaterialTheme.typography.bodySmall
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.tesis.aike.AppRoutes
 import com.tesis.aike.R
-import com.tesis.aike.data.remote.api.ChatApiService // Asegúrate que esta ruta sea correcta
-import com.tesis.aike.data.remote.dto.AuthRequest // Asegúrate que esta ruta sea correcta
+import com.tesis.aike.data.remote.api.AuthService
+import com.tesis.aike.data.remote.dto.AuthRequest
 import com.tesis.aike.ui.theme.AikeTheme
-import com.tesis.aike.util.TokenManager // Asegúrate que esta ruta sea correcta
+import com.tesis.aike.util.TokenManager
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,7 +68,7 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
     // Es buena práctica crear la instancia del servicio una sola vez.
     // Si LoginScreen se recompone mucho, esto podría ser ineficiente.
     // Considera proveerlo a través de un ViewModel o inyección de dependencias en el futuro.
-    val chatApiService = remember { ChatApiService() }
+    val authService = remember { AuthService() }
 
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -219,19 +217,20 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                         loginError = null
                         coroutineScope.launch {
                             val authRequest = AuthRequest(user = username, password = password)
-                            val authResponse = chatApiService.loginUser(authRequest)
+                            val authResponse = authService.loginUser(authRequest)
 
                             isLoading = false
                             if (authResponse != null && authResponse.token.isNotBlank()) {
-                                TokenManager.saveToken(context, authResponse.token)
+                                TokenManager.saveAuthData(context, authResponse.token, "1")
                                 println("Token guardado: ${authResponse.token}")
-                                navController.navigate(AppRoutes.homeScreenWithUsername(username)) {
-                                    popUpTo(AppRoutes.LOGIN_SCREEN) { inclusive = true }
-                                    launchSingleTop = true
+                                println("UserID guardado: 1")
+
+                                navController.navigate(AppRoutes.homeScreenWithUsername(username)) { // username es "admin" aquí
+                                    popUpTo(AppRoutes.LOGIN_ROUTE) { // Elimina el flujo de login de la pila
+                                        inclusive = true
+                                    }
+                                    launchSingleTop = true // Para el grafo principal de la app
                                 }
-                            } else {
-                                loginError = "Error de autenticación con el servidor."
-                                println("Login con API fallido o token vacío.")
                             }
                         }
                     } else {

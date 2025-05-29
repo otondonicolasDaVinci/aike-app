@@ -1,26 +1,23 @@
-package com.tesis.aike.ui.home // O el paquete donde lo tengas
+package com.tesis.aike.ui.home
 
-import android.app.Application // Importa Application
-import androidx.lifecycle.AndroidViewModel // Cambia ViewModel a AndroidViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.tesis.aike.data.remote.api.ChatApiService
-import com.tesis.aike.domain.model.ChatMessage // Asegúrate que la ruta a ChatMessage sea correcta
-import com.tesis.aike.util.TokenManager // Importa tu TokenManager
+import com.tesis.aike.data.remote.api.ChatService
+import com.tesis.aike.domain.model.ChatMessage
+import com.tesis.aike.util.TokenManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-// 1. Cambia la herencia de ViewModel a AndroidViewModel y añade el constructor
 class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val chatApiService = ChatApiService() // Instancia de nuestro servicio
-    private val appContext = application.applicationContext // Contexto para TokenManager
+    private val chatService = ChatService()
+    private val appContext = application.applicationContext
 
-    // Flujo privado mutable para la lista de mensajes
     private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
-    // Flujo público inmutable expuesto a la UI
     val messages: StateFlow<List<ChatMessage>> = _messages.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
@@ -29,40 +26,59 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
-    fun sendMessage(userInput: String) {
-        if (userInput.isBlank()) return
+    private val _messageInputText = MutableStateFlow("")
+    val messageInputText: StateFlow<String> = _messageInputText.asStateFlow()
 
-        // Añadir el mensaje del usuario a la lista inmediatamente
-        val userMessage = ChatMessage(text = userInput, isFromUser = true)
+    private val _initialWelcomePending = MutableStateFlow(true)
+    val initialWelcomePending: StateFlow<Boolean> = _initialWelcomePending.asStateFlow()
+
+    fun onMessageInputChanged(text: String) {
+        _messageInputText.value = text
+    }
+
+    fun markInitialWelcomeAsShown() {
+        _initialWelcomePending.value = false
+    }
+
+    fun sendMessage() {
+        val currentInput = _messageInputText.value
+        if (currentInput.isBlank()) return
+
+        val userMessage = ChatMessage(text = currentInput, isFromUser = true)
         _messages.update { currentMessages -> currentMessages + userMessage }
 
-        // Limpiar cualquier error previo y mostrar carga
         _errorMessage.value = null
         _isLoading.value = true
+        val textToSend = currentInput
+        _messageInputText.value = ""
 
         viewModelScope.launch {
-            // 2. Obtener el token usando TokenManager
             val token = TokenManager.getToken(appContext)
 
             if (token == null) {
-                // 3. Manejar el caso en que no hay token
                 _errorMessage.value = "Error: No autenticado. Por favor, inicie sesión de nuevo."
                 _isLoading.value = false
                 _messages.update { currentMessages ->
                     currentMessages + ChatMessage(
                         "No estás autenticado. Por favor, cierra y vuelve a iniciar sesión.",
-                        false // Mensaje del "sistema" o IA
+                        false
                     )
                 }
-                return@launch // No continuar si no hay token
+                return@launch
             }
 
             try {
-                // 4. Pasar el token a chatApiService.sendMessage
-                val response = chatApiService.sendMessage(userInput, token) // Ahora pasas el token
+                val response = chatService.sendMessage(textToSend, token)
                 if (response != null) {
                     val aiMessage = ChatMessage(text = response.respuesta, isFromUser = false)
                     _messages.update { currentMessages -> currentMessages + aiMessage }
+
+                    response.nuevoToken?.let { nuevoTokenRecibido ->
+                        if (nuevoTokenRecibido.isNotBlank()) {
+                            TokenManager.saveToken(appContext, nuevoTokenRecibido)
+                            println("Nuevo token guardado desde respuesta del chat: $nuevoTokenRecibido")
+                        }
+                    }
                 } else {
                     _messages.update { currentMessages ->
                         currentMessages + ChatMessage(
@@ -71,10 +87,6 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                         )
                     }
                     _errorMessage.value = "No se pudo obtener respuesta del servidor."
-                    // Si la respuesta fue nula porque el token era inválido (401/403),
-                    // ChatApiService ya imprimió un mensaje. Aquí podrías tomar acciones adicionales,
-                    // como limpiar el token localmente con TokenManager.clearToken(appContext)
-                    // y pedir al usuario que re-loguee.
                 }
             } catch (e: Exception) {
                 println("ChatViewModel - Error en sendMessage: ${e.message}")

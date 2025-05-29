@@ -1,8 +1,12 @@
-package com.tesis.aike.data.remote.dto // O el paquete donde la tengas
+// En tu archivo de DTOs (ej. NetworkModels.kt o ChatResponse.kt)
+package com.tesis.aike.data.remote.dto
 
-import kotlinx.serialization.Serializable // <--- ¡ASEGÚRATE DE TENER ESTE IMPORT!
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-@Serializable // <--- ¡ESTA ANOTACIÓN ES CRUCIAL!
+@Serializable
 data class ChatResponse(
-    val respuesta: String // O la estructura que tu backend devuelva
+    val respuesta: String,
+    @SerialName("newToken")
+    val nuevoToken: String? = null
 )
