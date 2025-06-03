@@ -1,4 +1,4 @@
-package com.tesis.aike.ui.profile // Asegúrate que el paquete sea el correcto
+package com.tesis.aike.ui.profile
 
 import android.annotation.SuppressLint
 import android.widget.Toast
@@ -83,96 +83,96 @@ fun ProfileScreen(navController: NavController, username: String) {
             )
         }
     ) { innerPadding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(innerPadding),
-            contentAlignment = Alignment.Center
+                .padding(innerPadding)
+                .padding(horizontal = 24.dp, vertical = 16.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (isLoading) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
             } else if (errorMessage != null) {
-                Text(text = errorMessage ?: "Error desconocido", color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(16.dp))
+                Text(
+                    text = errorMessage ?: "Error desconocido",
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
             } else if (userProfile != null) {
-                Column(
+                val profile = userProfile!!
+                Spacer(modifier = Modifier.height(16.dp))
+                Icon(
+                    imageVector = Icons.Filled.AccountCircle,
+                    contentDescription = "Icono de Perfil",
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 24.dp, vertical = 16.dp)
-                        .verticalScroll(rememberScrollState()),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .size(100.dp)
+                        .clip(CircleShape),
+                    tint = Color(0xFFB39DDB)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = profile.name ?: username,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Normal,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+
+                ProfileDetailItem(label = "DNI:", value = profile.dni ?: "No disponible")
+                ProfileDetailItem(label = "TEL:", value = "+54 9 11 3939-8945")
+                ProfileDetailItem(label = "MAIL:", value = profile.email ?: "No disponible")
+                ProfileDetailItem(label = "Pass:", value = "********************")
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Text(
+                    text = "¿Queres modificar algún dato? Llama al hall",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                Button(
+                    onClick = {
+                        Toast.makeText(context, "Funcionalidad de llamada no implementada", Toast.LENGTH_SHORT).show()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
+                    modifier = Modifier
+                        .fillMaxWidth(0.9f)
+                        .height(50.dp)
                 ) {
-                    Spacer(modifier = Modifier.height(32.dp))
-                    Icon(
-                        imageVector = Icons.Filled.AccountCircle,
-                        contentDescription = "Icono de Perfil",
-                        modifier = Modifier.size(120.dp).clip(CircleShape),
-                        tint = Color(0xFFD1C4E9)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = userProfile?.name ?: username,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    ProfileInfoRow(label = "DNI:", value = userProfile?.dni ?: "No disponible")
-                    ProfileInfoRow(label = "TEL:", value = "N/A (no en DTO)")
-                    ProfileInfoRow(label = "MAIL:", value = userProfile?.email ?: "No disponible")
-                    ProfileInfoRow(label = "Pass:", value = "********************")
-                    Spacer(modifier = Modifier.height(32.dp))
-                    Text(
-                        text = "¿Queres modificar algún dato? Llama al hall",
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(
-                        onClick = {
-                            Toast.makeText(context, "Llamando a recepción...", Toast.LENGTH_SHORT).show()
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
-                        modifier = Modifier.fillMaxWidth(0.8f)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.Call, contentDescription = "Icono Llamar", tint = Color.White)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("LLAMAR A RECEPCIÓN", color = Color.White, fontWeight = FontWeight.Bold)
-                        }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.Call, contentDescription = "Llamar", tint = Color.White)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("LLAMAR A RECEPCIÓN", color = Color.White, fontWeight = FontWeight.Bold)
                     }
-                    Spacer(modifier = Modifier.weight(1f))
                 }
+                Spacer(modifier = Modifier.height(16.dp))
+
             } else {
-                Text("No se pudo cargar la información del perfil.", modifier = Modifier.padding(16.dp))
+                Text("No se pudo cargar la información del perfil.", modifier = Modifier.align(Alignment.CenterHorizontally))
             }
         }
     }
 }
 
 @Composable
-fun Box(modifier: Modifier, contentAlignment: Alignment, content: @Composable () -> Unit) {
-    Text("Detalles del perfil en desarrollo...")
-}
-
-@Composable
-private fun ProfileInfoRow(label: String, value: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+private fun ProfileDetailItem(label: String, value: String) {
+    Column(modifier = Modifier
+        .fillMaxWidth()
+        .padding(vertical = 8.dp)) {
         Text(
             text = label,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.width(80.dp)
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(start = 8.dp)
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(start = 4.dp)
         )
     }
 }
@@ -181,6 +181,6 @@ private fun ProfileInfoRow(label: String, value: String) {
 @Composable
 fun ProfileScreenPreview() {
     AikeTheme {
-        ProfileScreen(navController = rememberNavController(), username = "UsuarioPreview")
+        ProfileScreen(navController = rememberNavController(), username = "PedroPreview")
     }
 }

@@ -58,6 +58,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.tesis.aike.AppRoutes
@@ -65,11 +66,11 @@ import com.tesis.aike.R
 import com.tesis.aike.domain.model.ChatMessage
 import com.tesis.aike.ui.theme.AikeTheme
 
-sealed class BottomNavItem(val routeId: String, val icon: ImageVector, val labelForAccessibility: String) {
+sealed class BottomNavItem(val routeBase: String, val icon: ImageVector, val labelForAccessibility: String) {
     object Viking : BottomNavItem(AppRoutes.HOME_BASE, Icons.Filled.Shield, "Principal Aike")
     object Hut : BottomNavItem(AppRoutes.RESERVATION_BASE, Icons.Filled.Home, "Mi Reserva")
     object Key : BottomNavItem(AppRoutes.QR_CODE_BASE, Icons.Filled.Key, "Claves QR")
-    object Bag : BottomNavItem("bag_tab_placeholder", Icons.Filled.ShoppingBag, "Bolsa")
+    object Bag : BottomNavItem(AppRoutes.PRODUCTS_BASE, Icons.Filled.ShoppingBag, "Productos")
     object Profile : BottomNavItem(AppRoutes.PROFILE_BASE, Icons.Filled.Person, "Perfil")
 }
 
@@ -92,7 +93,8 @@ fun AppBottomNavigationBar(
                 BottomNavItem.Hut -> AppRoutes.reservationScreenWithUsername(currentUsername)
                 BottomNavItem.Key -> AppRoutes.qrCodeScreenWithUsername(currentUsername)
                 BottomNavItem.Profile -> AppRoutes.profileScreenWithUsername(currentUsername)
-                else -> item.routeId // Para placeholders
+                BottomNavItem.Bag -> AppRoutes.productsScreenWithUsername(currentUsername)
+                else -> item.routeBase
             }
 
             val isSelected = currentDestination?.hierarchy?.any { it.route == destinationRouteWithArg } == true
@@ -106,14 +108,14 @@ fun AppBottomNavigationBar(
                         }
                     } else if (!destinationRouteWithArg.contains("placeholder")) {
                         navController.navigate(destinationRouteWithArg) {
-                            popUpTo(AppRoutes.MAIN_APP_GRAPH_ROUTE) { // Pop hasta el inicio del grafo anidado
+                            popUpTo(navController.graph.findStartDestination().id) {
                                 saveState = true
                             }
                             launchSingleTop = true
                             restoreState = true
                         }
                     } else {
-                        Log.d("AppBottomNav", "${item.labelForAccessibility} (${item.routeId}) clicked - Implementar navegación")
+                        Log.d("AppBottomNav", "${item.labelForAccessibility} (${item.routeBase}) clicked - Implementar navegación")
                     }
                 },
                 icon = {
@@ -145,7 +147,6 @@ fun HomeScreen(
     )
     val chatViewModel: ChatViewModel = viewModel()
     val initialWelcomePending by chatViewModel.initialWelcomePending.collectAsStateWithLifecycle()
-    Log.d("HomeScreen", "Recomposing. initialWelcomePending: $initialWelcomePending, Username: $username")
 
     Scaffold(
         bottomBar = {
@@ -154,7 +155,6 @@ fun HomeScreen(
                 items = bottomNavItems,
                 currentUsername = username,
                 onVikingTabAlreadyHome = {
-                    Log.d("HomeScreen", "onVikingTabAlreadyHome LLAMADO. initialWelcomePending actual: ${chatViewModel.initialWelcomePending.value}")
                 }
             )
         }
@@ -168,7 +168,6 @@ fun HomeScreen(
                     enabled = initialWelcomePending,
                     onClick = {
                         if (initialWelcomePending) {
-                            Log.d("HomeScreen", "Box de Bienvenida CLICKEADO. Llamando a markInitialWelcomeAsShown()")
                             chatViewModel.markInitialWelcomeAsShown()
                         }
                     }
@@ -176,7 +175,6 @@ fun HomeScreen(
             contentAlignment = Alignment.Center
         ) {
             if (initialWelcomePending) {
-                Log.d("HomeScreen", "Mostrando Welcome UI porque initialWelcomePending es TRUE")
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -206,7 +204,6 @@ fun HomeScreen(
                     )
                 }
             } else {
-                Log.d("HomeScreen", "Mostrando ChatInterface porque initialWelcomePending es FALSE")
                 ChatInterface(modifier = Modifier.fillMaxSize())
             }
         }
