@@ -92,7 +92,7 @@ fun CartPanel(
                             cartItem = cartItem,
                             currencyFormatter = currencyFormatter,
                             onQuantityChange = { newQuantity: Int ->
-                                onUpdateQuantity(cartItem.product.id, newQuantity)
+                                onUpdateQuantity(cartItem.product.id.toString(), newQuantity)
                             }
                         )
                         HorizontalDivider()
@@ -169,8 +169,8 @@ fun CartItemRow(
 fun CartPanelPreview() {
     AikeTheme {
         val sampleProducts = listOf(
-            Product("1", "Mermelada de Frutilla", 1500.0, "...", R.drawable.aike_logo.toString(), "Mermelada"),
-            Product("2", "Chocolate Amargo", 2500.0, "...", R.drawable.aike_logo.toString(), "Chocolates")
+            Product(1, "Mermelada de Frutilla","...",  1500.0, R.drawable.aike_logo.toString(), "Mermelada"),
+            Product(2, "Chocolate Amargo", "...",2500.0, R.drawable.aike_logo.toString(), "Chocolates")
         )
         val sampleCartItems = listOf(
             CartItem(sampleProducts[0], 2),

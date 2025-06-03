@@ -1,11 +1,13 @@
 package com.tesis.aike.ui.components.products
 
+import android.app.Application // Necesario para AndroidViewModel
 import android.util.Log
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel // Cambia a AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.tesis.aike.R
+import com.tesis.aike.data.remote.api.ProductService // Importa el nuevo servicio
 import com.tesis.aike.domain.model.CartItem
 import com.tesis.aike.domain.model.Product
+import com.tesis.aike.util.TokenManager // Para obtener el token si es necesario
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -13,8 +15,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
-class ProductViewModel : ViewModel() {
+class ProductViewModel(application: Application) : AndroidViewModel(application) { // Hereda de AndroidViewModel
+
+    private val productService = ProductService() // Instancia del nuevo servicio
+    private val appContext = application.applicationContext // Contexto para TokenManager
 
     private val _productsByCategory = MutableStateFlow<Map<String, List<Product>>>(emptyMap())
     val productsByCategory: StateFlow<Map<String, List<Product>>> = _productsByCategory.asStateFlow()
@@ -44,36 +50,58 @@ class ProductViewModel : ViewModel() {
             initialValue = 0.0
         )
 
+    private val _isLoadingProducts = MutableStateFlow(false)
+    val isLoadingProducts: StateFlow<Boolean> = _isLoadingProducts.asStateFlow()
+
+    private val _productErrorMessage = MutableStateFlow<String?>(null)
+    val productErrorMessage: StateFlow<String?> = _productErrorMessage.asStateFlow()
+
+
     init {
-        loadSampleProducts()
+        fetchProducts() // Llama a cargar productos al iniciar el ViewModel
     }
 
-    private fun loadSampleProducts() {
-        _productsByCategory.value = mapOf(
-            "Mermelada" to listOf(
-                Product("1", "Mermelada de Frutilla", 1500.0, "Lorem ipsum es el texto que se usa habitualmente en diseño gráfico.", R.drawable.aike_logo.toString(), "Mermelada"),
-                Product("2", "Mermelada de Frambuesa", 1600.0, "Exquisita mermelada de frambuesas frescas.", R.drawable.aike_logo.toString(), "Mermelada"),
-                Product("3", "Mermelada de Sauco", 1700.0, "Mermelada única de sauco patagónico.", R.drawable.aike_logo.toString(), "Mermelada")
-            ),
-            "Chocolates" to listOf(
-                Product("4", "Chocolate Amargo 70%", 2500.0, "Intenso chocolate amargo con 70% cacao.", R.drawable.aike_logo.toString(), "Chocolates"),
-                Product("5", "Chocolate con Leche", 2200.0, "Suave chocolate con leche y almendras.", R.drawable.aike_logo.toString(), "Chocolates")
-            )
-        )
+    fun fetchProducts() {
+        if (_isLoadingProducts.value) return
+
+        viewModelScope.launch {
+            _isLoadingProducts.value = true
+            _productErrorMessage.value = null
+            // El endpoint de productos puede o no necesitar token.
+            // Si es público, puedes pasar null o un token vacío.
+            // Si es protegido, obtén el token real.
+            val token = TokenManager.getToken(appContext)
+
+            try {
+                val fetchedProducts = productService.getAllProducts(token)
+                if (fetchedProducts != null) {
+                    // Agrupa los productos por categoría
+                    _productsByCategory.value = fetchedProducts.groupBy { it.category }
+                } else {
+                    _productErrorMessage.value = "No se pudieron cargar los productos."
+                }
+            } catch (e: Exception) {
+                _productErrorMessage.value = "Error al cargar productos: ${e.message}"
+                e.printStackTrace()
+            } finally {
+                _isLoadingProducts.value = false
+            }
+        }
     }
 
-    fun getQuantityInCart(productId: String): Int {
-        return _cartItemsMap.value[productId]?.quantity ?: 0
+
+    fun getQuantityInCart(productId: Long): Int { // Cambiado a Long para coincidir con Product.id
+        return _cartItemsMap.value[productId.toString()]?.quantity ?: 0 // El mapa usa String como clave
     }
 
     fun addToCart(product: Product) {
         _cartItemsMap.update { currentCart ->
             val mutableCart = currentCart.toMutableMap()
-            val cartItem = mutableCart[product.id]
+            val cartItem = mutableCart[product.id.toString()] // Usa product.id.toString()
             if (cartItem != null) {
-                mutableCart[product.id] = cartItem.copy(quantity = cartItem.quantity + 1)
+                mutableCart[product.id.toString()] = cartItem.copy(quantity = cartItem.quantity + 1)
             } else {
-                mutableCart[product.id] = CartItem(product = product, quantity = 1)
+                mutableCart[product.id.toString()] = CartItem(product = product, quantity = 1)
             }
             Log.d("ProductViewModel", "Cart updated: $mutableCart, Total Qty: ${mutableCart.values.sumOf { it.quantity }}")
             mutableCart
@@ -83,12 +111,12 @@ class ProductViewModel : ViewModel() {
     fun removeFromCart(product: Product) {
         _cartItemsMap.update { currentCart ->
             val mutableCart = currentCart.toMutableMap()
-            val cartItem = mutableCart[product.id]
+            val cartItem = mutableCart[product.id.toString()]
             if (cartItem != null) {
                 if (cartItem.quantity > 1) {
-                    mutableCart[product.id] = cartItem.copy(quantity = cartItem.quantity - 1)
+                    mutableCart[product.id.toString()] = cartItem.copy(quantity = cartItem.quantity - 1)
                 } else {
-                    mutableCart.remove(product.id)
+                    mutableCart.remove(product.id.toString())
                 }
             }
             Log.d("ProductViewModel", "Cart updated: $mutableCart, Total Qty: ${mutableCart.values.sumOf { it.quantity }}")
@@ -96,15 +124,15 @@ class ProductViewModel : ViewModel() {
         }
     }
 
-    fun updateQuantityInCartPanel(productId: String, newQuantity: Int) {
+    fun updateQuantityInCartPanel(productId: Long, newQuantity: Int) { // Cambiado a Long
         _cartItemsMap.update { currentCart ->
             val mutableCart = currentCart.toMutableMap()
-            val cartItem = mutableCart[productId]
+            val cartItem = mutableCart[productId.toString()]
             if (cartItem != null) {
                 if (newQuantity > 0) {
-                    mutableCart[productId] = cartItem.copy(quantity = newQuantity)
+                    mutableCart[productId.toString()] = cartItem.copy(quantity = newQuantity)
                 } else {
-                    mutableCart.remove(productId)
+                    mutableCart.remove(productId.toString())
                 }
             }
             mutableCart

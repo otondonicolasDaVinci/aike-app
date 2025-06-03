@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -44,12 +45,13 @@ import com.tesis.aike.domain.model.CartItem
 import com.tesis.aike.domain.model.Product
 import com.tesis.aike.ui.home.AppBottomNavigationBar
 import com.tesis.aike.ui.home.BottomNavItem
+import com.tesis.aike.ui.components.products.ProductScreen
 import com.tesis.aike.ui.theme.AikeTheme
 import java.text.NumberFormat
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter") // Mantenido por el uso de innerPadding
 @Composable
 fun ProductScreen(
     navController: NavController,
@@ -67,6 +69,8 @@ fun ProductScreen(
     val totalCartQuantity by productViewModel.totalCartQuantity.collectAsStateWithLifecycle()
     val cartItemsList by productViewModel.cartItems.collectAsStateWithLifecycle()
     val totalCartPrice by productViewModel.totalCartPrice.collectAsStateWithLifecycle()
+    val isLoadingProducts by productViewModel.isLoadingProducts.collectAsStateWithLifecycle()
+    val productErrorMessage by productViewModel.productErrorMessage.collectAsStateWithLifecycle()
 
     var showCartPanel by rememberSaveable { mutableStateOf(false) }
 
@@ -117,34 +121,53 @@ fun ProductScreen(
                 )
             }
         ) { innerPadding ->
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                productsByCategory.forEach { (category, products) ->
-                    item {
-                        Text(
-                            text = category,
-                            style = MaterialTheme.typography.headlineSmall,
-                            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
-                        )
-                    }
-                    item {
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            contentPadding = PaddingValues(bottom = 16.dp)
-                        ) {
-                            items(products) { product ->
-                                val quantityInCart = cartItemsList.find { cartItem -> cartItem.product.id == product.id }?.quantity ?: 0
-                                ProductCard(
-                                    product = product,
-                                    quantityInCart = quantityInCart,
-                                    onAddToCart = { p -> productViewModel.addToCart(p) },
-                                    onRemoveFromCart = { p -> productViewModel.removeFromCart(p) }
+            Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                if (isLoadingProducts) {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                } else if (productErrorMessage != null) {
+                    Text(
+                        text = productErrorMessage ?: "Error cargando productos",
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.align(Alignment.Center).padding(16.dp)
+                    )
+                } else if (productsByCategory.isEmpty()){
+                    Text(
+                        text = "No hay productos disponibles en este momento.",
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.align(Alignment.Center).padding(16.dp)
+                    )
+                }
+                else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        productsByCategory.forEach { (category, products) ->
+                            item {
+                                Text(
+                                    text = category,
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
                                 )
+                            }
+                            item {
+                                LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    contentPadding = PaddingValues(bottom = 16.dp)
+                                ) {
+                                    items(products) { product: Product ->
+                                        val quantityInCart = cartItemsList.find { cartItem: CartItem -> cartItem.product.id == product.id }?.quantity ?: 0
+                                        ProductCard(
+                                            product = product,
+                                            quantityInCart = quantityInCart,
+                                            onAddToCart = { p: Product -> productViewModel.addToCart(p) },
+                                            onRemoveFromCart = { p: Product -> productViewModel.removeFromCart(p) }
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -157,7 +180,7 @@ fun ProductScreen(
             cartItems = cartItemsList,
             totalPrice = totalCartPrice,
             onDismiss = { showCartPanel = false },
-            onUpdateQuantity = { productId, newQuantity ->
+            onUpdateQuantity = { productId: Long, newQuantity: Int ->
                 productViewModel.updateQuantityInCartPanel(productId, newQuantity)
             },
             onCheckout = {
@@ -244,7 +267,7 @@ fun CartPanel(
     cartItems: List<CartItem>,
     totalPrice: Double,
     onDismiss: () -> Unit,
-    onUpdateQuantity: (productId: String, newQuantity: Int) -> Unit,
+    onUpdateQuantity: (productId: Long, newQuantity: Int) -> Unit,
     onCheckout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -329,7 +352,6 @@ fun CartPanel(
     }
 }
 
-
 @Preview(showBackground = true)
 @Composable
 fun ProductScreenPreview() {
@@ -343,7 +365,7 @@ fun ProductScreenPreview() {
 fun ProductCardPreview() {
     AikeTheme {
         ProductCard(
-            product = Product("1", "Mermelada de Frutilla", 1500.0, "Deliciosa mermelada artesanal de frutilla, ideal para tus desayunos.", null, "Mermelada"),
+            product = Product(id = 1L, title = "Mermelada de Frutilla", description = "Deliciosa mermelada artesanal.", price = 1500.0, imageUrl = null, category = "Mermelada"),
             quantityInCart = 1,
             onAddToCart = {},
             onRemoveFromCart = {}
@@ -356,8 +378,8 @@ fun ProductCardPreview() {
 fun CartPanelFilledPreview() {
     AikeTheme {
         val sampleProducts = listOf(
-            Product("1", "Mermelada de Frutilla", 1500.0, "...", R.drawable.aike_logo.toString(), "Mermelada"),
-            Product("2", "Chocolate Amargo", 2500.0, "...", R.drawable.aike_logo.toString(), "Chocolates")
+            Product(id = 1L, title = "Mermelada de Frutilla", description = "Desc. Frutilla", price = 1500.0, imageUrl = null, category = "Mermelada"),
+            Product(id = 2L, title = "Chocolate Amargo", description = "Desc. Chocolate", price = 2500.0, imageUrl = null, category = "Chocolates")
         )
         val sampleCartItems = listOf(
             CartItem(sampleProducts[0], 2),
