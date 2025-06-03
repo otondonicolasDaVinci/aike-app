@@ -5,39 +5,13 @@ import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.ShoppingBag
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -66,7 +40,7 @@ import com.tesis.aike.R
 import com.tesis.aike.domain.model.ChatMessage
 import com.tesis.aike.ui.theme.AikeTheme
 
-sealed class BottomNavItem(val routeBase: String, val icon: ImageVector, val labelForAccessibility: String) {
+sealed class BottomNavItem(val routeId: String, val icon: ImageVector, val labelForAccessibility: String) {
     object Viking : BottomNavItem(AppRoutes.HOME_BASE, Icons.Filled.Shield, "Principal Aike")
     object Hut : BottomNavItem(AppRoutes.RESERVATION_BASE, Icons.Filled.Home, "Mi Reserva")
     object Key : BottomNavItem(AppRoutes.QR_CODE_BASE, Icons.Filled.Key, "Claves QR")
@@ -94,7 +68,6 @@ fun AppBottomNavigationBar(
                 BottomNavItem.Key -> AppRoutes.qrCodeScreenWithUsername(currentUsername)
                 BottomNavItem.Profile -> AppRoutes.profileScreenWithUsername(currentUsername)
                 BottomNavItem.Bag -> AppRoutes.productsScreenWithUsername(currentUsername)
-                else -> item.routeBase
             }
 
             val isSelected = currentDestination?.hierarchy?.any { it.route == destinationRouteWithArg } == true
@@ -106,16 +79,15 @@ fun AppBottomNavigationBar(
                         if (item == BottomNavItem.Viking) {
                             onVikingTabAlreadyHome()
                         }
-                    } else if (!destinationRouteWithArg.contains("placeholder")) {
+                    } else {
                         navController.navigate(destinationRouteWithArg) {
-                            popUpTo(navController.graph.findStartDestination().id) {
+                            popUpTo(AppRoutes.MAIN_APP_GRAPH_ROUTE) { // Pop hasta la RUTA del grafo anidado
                                 saveState = true
+                                inclusive = false // No incluyas el MAIN_APP_GRAPH_ROUTE mismo al hacer pop si quieres que su startDestination se restaure
                             }
                             launchSingleTop = true
                             restoreState = true
                         }
-                    } else {
-                        Log.d("AppBottomNav", "${item.labelForAccessibility} (${item.routeBase}) clicked - Implementar navegación")
                     }
                 },
                 icon = {
@@ -147,6 +119,7 @@ fun HomeScreen(
     )
     val chatViewModel: ChatViewModel = viewModel()
     val initialWelcomePending by chatViewModel.initialWelcomePending.collectAsStateWithLifecycle()
+    Log.d("HomeScreen", "Recomposing. initialWelcomePending: $initialWelcomePending, Username: $username")
 
     Scaffold(
         bottomBar = {
@@ -155,6 +128,7 @@ fun HomeScreen(
                 items = bottomNavItems,
                 currentUsername = username,
                 onVikingTabAlreadyHome = {
+                    Log.d("HomeScreen", "onVikingTabAlreadyHome LLLAMADO. initialWelcomePending actual: ${chatViewModel.initialWelcomePending.value}")
                 }
             )
         }
@@ -168,6 +142,7 @@ fun HomeScreen(
                     enabled = initialWelcomePending,
                     onClick = {
                         if (initialWelcomePending) {
+                            Log.d("HomeScreen", "Box de Bienvenida CLICKEADO. Llamando a markInitialWelcomeAsShown()")
                             chatViewModel.markInitialWelcomeAsShown()
                         }
                     }
@@ -175,6 +150,7 @@ fun HomeScreen(
             contentAlignment = Alignment.Center
         ) {
             if (initialWelcomePending) {
+                Log.d("HomeScreen", "Mostrando Welcome UI porque initialWelcomePending es TRUE")
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -204,6 +180,7 @@ fun HomeScreen(
                     )
                 }
             } else {
+                Log.d("HomeScreen", "Mostrando ChatInterface porque initialWelcomePending es FALSE")
                 ChatInterface(modifier = Modifier.fillMaxSize())
             }
         }
