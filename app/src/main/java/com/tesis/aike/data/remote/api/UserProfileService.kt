@@ -11,7 +11,7 @@ import io.ktor.http.HttpStatusCode
 
 class UserProfileService(private val client: HttpClient = KtorClientProvider.client) {
 
-    private val usersBaseUrl = "http://10.0.2.2:8082/users"
+    private val usersBaseUrl = "http://10.0.2.2:8080/users"
 
     suspend fun getUserProfile(userId: String, token: String?): UserProfileData? {
         if (token.isNullOrBlank() || userId.isBlank()) {

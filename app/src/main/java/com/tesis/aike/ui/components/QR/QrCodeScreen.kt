@@ -1,4 +1,4 @@
-package com.tesis.aike.ui.qrcode
+package com.tesis.aike.ui.components.QR
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.Image

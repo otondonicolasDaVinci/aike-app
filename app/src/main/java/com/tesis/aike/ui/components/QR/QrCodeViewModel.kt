@@ -1,6 +1,7 @@
 package com.tesis.aike.ui.components.QR
 
 import android.app.Application
+import android.graphics.BitmapFactory
 import android.util.Base64
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -28,13 +29,18 @@ class QrCodeViewModel(application: Application) : AndroidViewModel(application) 
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
+    init {
+        fetchQrCode()
+    }
+
     fun fetchQrCode() {
-        if (_qrCodeBitmap.value != null) return
         if (_isLoading.value) return
 
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
+            _qrCodeBitmap.value = null
+
             val token = TokenManager.getToken(appContext)
             val userId = TokenManager.getUserId(appContext)
 
@@ -46,27 +52,20 @@ class QrCodeViewModel(application: Application) : AndroidViewModel(application) 
 
             try {
                 val base64String = qrCodeService.getQrCodeBase64(userId, token)
-                if (base64String != null) {
-                    val imageBytes = Base64.decode(base64String, Base64.DEFAULT)
-                    val inputStream = ByteArrayInputStream(imageBytes)
-                    val bitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
-                    _qrCodeBitmap.value = bitmap?.asImageBitmap()
-                    if (bitmap == null) {
-                        _errorMessage.value = "No se pudo decodificar la imagen QR."
-                    }
+                val imageBytes = Base64.decode(base64String, Base64.DEFAULT)
+                val inputStream = ByteArrayInputStream(imageBytes)
+                val bitmap = BitmapFactory.decodeStream(inputStream)
+                if (bitmap != null) {
+                    _qrCodeBitmap.value = bitmap.asImageBitmap()
                 } else {
-                    _errorMessage.value = "No se pudo obtener el código QR del servidor."
+                    _errorMessage.value = "No se pudo decodificar la imagen QR recibida."
                 }
             } catch (e: Exception) {
-                _errorMessage.value = "Error al cargar QR: ${e.message}"
+                _errorMessage.value = e.message ?: "Ocurrió un error desconocido"
                 e.printStackTrace()
             } finally {
                 _isLoading.value = false
             }
         }
-    }
-
-    fun clearErrorMessage() {
-        _errorMessage.value = null
     }
 }

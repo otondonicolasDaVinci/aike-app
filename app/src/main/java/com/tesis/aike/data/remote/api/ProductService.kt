@@ -12,7 +12,7 @@ import io.ktor.http.HttpStatusCode
 
 class ProductService(private val client: HttpClient = KtorClientProvider.client) {
 
-    private val productsBaseUrl = "http://10.0.2.2:8082/products" // Endpoint de tu ProductsController
+    private val productsBaseUrl = "http://10.0.2.2:8080/products" // Endpoint de tu ProductsController
 
     suspend fun getAllProducts(token: String?): List<Product>? {
         // El endpoint de productos podría no requerir token si es público,

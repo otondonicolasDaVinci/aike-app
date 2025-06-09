@@ -23,7 +23,7 @@ import com.tesis.aike.ui.components.products.ProductScreen
 import com.tesis.aike.ui.home.HomeScreen
 import com.tesis.aike.ui.login.LoginScreen
 import com.tesis.aike.ui.profile.ProfileScreen
-import com.tesis.aike.ui.qrcode.QrCodeScreen
+import com.tesis.aike.ui.components.QR.QrCodeScreen
 import com.tesis.aike.ui.reservation.ReservationScreen
 import com.tesis.aike.ui.theme.AikeTheme
 
@@ -45,20 +45,20 @@ object AppRoutes {
     private const val RESERVATION_ROUTE_BASE = "reservation"
     const val RESERVATION_SCREEN_WITH_ARG = "$RESERVATION_ROUTE_BASE/{$USERNAME_ARG}"
 
-    private const val PRODUCTS_ROUTE_BASE = "products" // Nueva ruta base
-    const val PRODUCTS_SCREEN_WITH_ARG = "$PRODUCTS_ROUTE_BASE/{$USERNAME_ARG}" // Nueva ruta con argumento
+    private const val PRODUCTS_ROUTE_BASE = "products"
+    const val PRODUCTS_SCREEN_WITH_ARG = "$PRODUCTS_ROUTE_BASE/{$USERNAME_ARG}"
 
     fun homeScreenWithUsername(username: String) = "$HOME_ROUTE_BASE/$username"
     fun qrCodeScreenWithUsername(username: String) = "$QR_CODE_ROUTE_BASE/$username"
     fun profileScreenWithUsername(username: String) = "$PROFILE_ROUTE_BASE/$username"
     fun reservationScreenWithUsername(username: String) = "$RESERVATION_ROUTE_BASE/$username"
-    fun productsScreenWithUsername(username: String) = "$PRODUCTS_ROUTE_BASE/$username" // Nueva función helper
+    fun productsScreenWithUsername(username: String) = "$PRODUCTS_ROUTE_BASE/$username"
 
     val HOME_BASE = HOME_ROUTE_BASE
     val QR_CODE_BASE = QR_CODE_ROUTE_BASE
     val PROFILE_BASE = PROFILE_ROUTE_BASE
     val RESERVATION_BASE = RESERVATION_ROUTE_BASE
-    val PRODUCTS_BASE = PRODUCTS_ROUTE_BASE // Nueva base
+    val PRODUCTS_BASE = PRODUCTS_ROUTE_BASE
 }
 
 class MainActivity : ComponentActivity() {

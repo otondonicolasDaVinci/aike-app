@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "959565422604",
+    "project_id": "aike-53217",
+    "storage_bucket": "aike-53217.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:959565422604:android:c2b1889e3ca782551f4e29",
+        "android_client_info": {
+          "package_name": "com.tesis.aike"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "959565422604-7nh6ajueoiirsdpjinq0i7plb87u9d8n.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tesis.aike",
+            "certificate_hash": "1d82f4346a34e299c7ae0fc2fe35161465bd9dc3"
+          }
+        },
+        {
+          "client_id": "959565422604-0dvq3jihm4as00tukaut3i60j2ssm25o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDtEExC3uWFSM8ZBKlqP2XFAtYMgtEvq7g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "959565422604-0dvq3jihm4as00tukaut3i60j2ssm25o.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

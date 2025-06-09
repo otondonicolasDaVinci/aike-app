@@ -1,6 +1,12 @@
 package com.tesis.aike.ui.login
 
+import android.app.Activity
+import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,9 +20,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Facebook
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -45,8 +52,15 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.tasks.Task
 import com.tesis.aike.AppRoutes
 import com.tesis.aike.R
 import com.tesis.aike.data.remote.api.AuthService
@@ -58,51 +72,97 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
-    var username by rememberSaveable { mutableStateOf("") }
-    var password by rememberSaveable { mutableStateOf("") }
+    var uiUsername by rememberSaveable { mutableStateOf("") }
+    var uiPassword by rememberSaveable { mutableStateOf("") }
     var loginError by rememberSaveable { mutableStateOf<String?>(null) }
     var isLoading by rememberSaveable { mutableStateOf(false) }
+    var isLoadingGoogle by rememberSaveable { mutableStateOf(false) }
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    // Es buena práctica crear la instancia del servicio una sola vez.
-    // Si LoginScreen se recompone mucho, esto podría ser ineficiente.
-    // Considera proveerlo a través de un ViewModel o inyección de dependencias en el futuro.
     val authService = remember { AuthService() }
 
+    val googleSignInClient: GoogleSignInClient = remember {
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken("959565422604-0dvq3jihm4as00tukaut3i60j2ssm25o.apps.googleusercontent.com")
+            .requestEmail()
+            .build()
+        GoogleSignIn.getClient(context, gso)
+    }
+
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result: ActivityResult ->
+        isLoadingGoogle = false
+        if (result.resultCode == Activity.RESULT_OK) {
+            val task: Task<GoogleSignInAccount> = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account: GoogleSignInAccount = task.getResult(ApiException::class.java)
+                val idToken = account.idToken
+                if (idToken != null) {
+                    Log.d("LoginScreen", "Google ID Token obtenido")
+                    coroutineScope.launch {
+                        isLoadingGoogle = true
+                        try {
+                            val apiResponse = authService.loginWithGoogleToken(idToken)
+                            if (apiResponse != null && apiResponse.token.isNotBlank()) {
+                                TokenManager.saveAuthData(context, apiResponse.token, apiResponse.userId.toString())
+                                Log.d("LoginScreen", "Token de API guardado. UserID: ${apiResponse.userId}")
+                                val displayNameForHome = account.email ?: uiUsername.takeIf { it.isNotBlank() } ?: "UsuarioGoogle"
+                                navController.navigate(AppRoutes.homeScreenWithUsername(displayNameForHome)) {
+                                    popUpTo(AppRoutes.LOGIN_ROUTE) { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                            } else {
+                                loginError = "Error de autenticación con servidor vía Google."
+                                Log.e("LoginScreen", "loginWithGoogleToken fallido o token API vacío")
+                            }
+                        } catch (e: Exception) {
+                            loginError = "Error inesperado al contactar al servidor."
+                            Log.e("LoginScreen", "Excepción en coroutine de Google Login", e)
+                        } finally {
+                            isLoadingGoogle = false
+                        }
+                    }
+                } else {
+                    loginError = "No se pudo obtener el token de Google."
+                    Log.e("LoginScreen", "Google ID Token es nulo después de un sign-in exitoso.")
+                }
+            } catch (e: ApiException) {
+                loginError = "Error de Google Sign-In: ${e.statusCode}"
+                Log.e("LoginScreen", "Error de Google Sign-In", e)
+            }
+        } else {
+            loginError = "Inicio de sesión con Google cancelado o fallido."
+            Log.w("LoginScreen", "Google Sign-In fallido, resultCode: ${result.resultCode}")
+        }
+    }
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 16.dp),
+                .padding(horizontal = 24.dp, vertical = 16.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(modifier = Modifier.height(32.dp))
-
-            // He comentado la imagen aquí porque ya tienes un Text "Inicie Sesión"
-            // Si quieres el logo Y el texto, puedes ajustar el espaciado.
-            // Si quieres SOLO el logo, quita el Text de abajo.
-            // Si quieres SOLO el texto, quita la Imagen.
-            // Por ahora, dejo ambos para que decidas.
             Text(
                 text = "Inicie sesión",
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold
             )
-
             Image(
-                painter = painterResource(id = R.drawable.aike_logo), // Asegúrate que aike_logo exista
+                painter = painterResource(id = R.drawable.aike_logo),
                 contentDescription = "Logo de la aplicación",
-                modifier = Modifier.height(100.dp) // Puedes ajustar el tamaño
+                modifier = Modifier.height(100.dp)
             )
-
-            Spacer(modifier = Modifier.height(24.dp)) // Reduje un poco este Spacer
+            Spacer(modifier = Modifier.height(24.dp))
 
             OutlinedTextField(
-                value = username,
+                value = uiUsername,
                 onValueChange = {
-                    username = it
+                    uiUsername = it
                     loginError = null
                 },
                 label = { Text("Usuario") },
@@ -110,13 +170,11 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
             )
-
             Spacer(modifier = Modifier.height(16.dp))
-
             OutlinedTextField(
-                value = password,
+                value = uiPassword,
                 onValueChange = {
-                    password = it
+                    uiPassword = it
                     loginError = null
                 },
                 label = { Text("Password") },
@@ -132,14 +190,13 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                 Text(
                     text = it,
                     color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall, // Asegúrate que bodySmall esté definido o usa otra tipografía
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center
                 )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-
             Text(
                 text = "Forgot password?",
                 style = MaterialTheme.typography.bodyMedium,
@@ -151,39 +208,53 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                         Toast
                             .makeText(context, "Funcionalidad no implementada", Toast.LENGTH_SHORT)
                             .show()
-                        println("Forgot password clicked!")
                     }
                     .padding(vertical = 4.dp)
             )
 
             Spacer(modifier = Modifier.height(32.dp))
-
             Button(
-                onClick = { Toast.makeText(context, "Inicio con Google no implementado", Toast.LENGTH_SHORT).show() },
+                onClick = {
+                    isLoadingGoogle = true
+                    loginError = null
+                    googleSignInClient.signOut().addOnCompleteListener {
+                        val signInIntent = googleSignInClient.signInIntent
+                        googleSignInLauncher.launch(signInIntent)
+                    }
+                },
+                enabled = !isLoading && !isLoadingGoogle,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF2D3748),
-                    contentColor = Color.White
+                    containerColor = Color.White,
+                    contentColor = MaterialTheme.colorScheme.onSurface
                 ),
-                shape = MaterialTheme.shapes.medium
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+                border = BorderStroke(1.dp, Color.LightGray)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Start,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.AccountCircle,
-                        contentDescription = "Google logo",
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(text = "Continue with Google", textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+                if (isLoadingGoogle) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.primary, strokeWidth = 2.dp)
+                } else {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_google_logo),
+                            contentDescription = "Google logo",
+                            modifier = Modifier.size(24.dp),
+                            tint = Color.Unspecified
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "Continue with Google",
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-
             Button(
                 onClick = { Toast.makeText(context, "Inicio con Facebook no implementado", Toast.LENGTH_SHORT).show() },
                 modifier = Modifier.fillMaxWidth(),
@@ -209,35 +280,37 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-
             Button(
                 onClick = {
-                    if (!username.isEmpty() && !password.isEmpty()) {
+                    if (uiUsername.isNotBlank() && uiPassword.isNotBlank()) {
                         isLoading = true
                         loginError = null
                         coroutineScope.launch {
-                            val authRequest = AuthRequest(user = username, password = password)
-                            val authResponse = authService.loginUser(authRequest)
+                            try {
+                                val authRequest = AuthRequest(user = uiUsername, password = uiPassword)
+                                val authResponse = authService.loginUser(authRequest)
 
-                            isLoading = false
-                            if (authResponse != null && authResponse.token.isNotBlank()) {
-                                TokenManager.saveAuthData(context, authResponse.token, "1")
-                                println("Token guardado: ${authResponse.token}")
-                                println("UserID guardado: 1")
-
-                                navController.navigate(AppRoutes.homeScreenWithUsername(username)) { // username es "admin" aquí
-                                    popUpTo(AppRoutes.LOGIN_ROUTE) { // Elimina el flujo de login de la pila
-                                        inclusive = true
+                                if (authResponse != null && authResponse.token.isNotBlank()) {
+                                    TokenManager.saveAuthData(context, authResponse.token, uiUsername)
+                                    navController.navigate(AppRoutes.homeScreenWithUsername(uiUsername)) {
+                                        popUpTo(AppRoutes.LOGIN_ROUTE) { inclusive = true }
+                                        launchSingleTop = true
                                     }
-                                    launchSingleTop = true // Para el grafo principal de la app
+                                } else {
+                                    loginError = "Usuario o contraseña incorrectos."
                                 }
+                            } catch (e: Exception) {
+                                loginError = "Error de conexión. Intente de nuevo."
+                                Log.e("LoginScreen", "Excepción en coroutine de Login", e)
+                            } finally {
+                                isLoading = false
                             }
                         }
                     } else {
-                        loginError = "Usuario o contraseña de app incorrectos."
+                        loginError = "Por favor, ingrese usuario y contraseña."
                     }
                 },
-                enabled = !isLoading,
+                enabled = !isLoading && !isLoadingGoogle,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF6B7280),
@@ -245,22 +318,18 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                 ),
                 shape = MaterialTheme.shapes.medium
             ) {
-                // Muestra el CircularProgressIndicator dentro del botón cuando isLoading es true
                 if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp), // Ajusta el tamaño según necesites
-                        color = Color.White, // Color del indicador
-                        strokeWidth = 2.dp // Grosor del indicador
-                    )
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
                 } else {
                     Text(text = "Iniciar sesión", style = MaterialTheme.typography.titleMedium)
                 }
             }
 
             Spacer(modifier = Modifier.weight(1f))
-
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -277,16 +346,14 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                         Toast
                             .makeText(context, "Funcionalidad no implementada", Toast.LENGTH_SHORT)
                             .show()
-                        println("Regístrese en la web clicked!")
                     }
                 )
             }
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
 
-@Preview(showBackground = true, device = "spec:width=360dp,height=740dp")
+@Preview(showBackground = true)
 @Composable
 fun LoginScreenPreview() {
     AikeTheme {
