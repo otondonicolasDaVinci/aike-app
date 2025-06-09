@@ -25,11 +25,14 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Facebook
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -49,6 +52,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -74,6 +78,7 @@ import kotlinx.coroutines.launch
 fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
     var uiUsername by rememberSaveable { mutableStateOf("") }
     var uiPassword by rememberSaveable { mutableStateOf("") }
+    var passwordVisible by rememberSaveable { mutableStateOf(false) }
     var loginError by rememberSaveable { mutableStateOf<String?>(null) }
     var isLoading by rememberSaveable { mutableStateOf(false) }
     var isLoadingGoogle by rememberSaveable { mutableStateOf(false) }
@@ -147,15 +152,16 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(modifier = Modifier.height(32.dp))
-            Text(
-                text = "Inicie sesión",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold
-            )
             Image(
                 painter = painterResource(id = R.drawable.aike_logo),
                 contentDescription = "Logo de la aplicación",
-                modifier = Modifier.height(100.dp)
+                modifier = Modifier.height(120.dp)
+            )
+            Text(
+                text = "Bienvenido a Aike",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 16.dp)
             )
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -168,7 +174,8 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                 label = { Text("Usuario") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Icono de Usuario") }
             )
             Spacer(modifier = Modifier.height(16.dp))
             OutlinedTextField(
@@ -177,12 +184,18 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                     uiPassword = it
                     loginError = null
                 },
-                label = { Text("Password") },
+                label = { Text("Contraseña") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                isError = loginError != null
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Icono de Contraseña") },
+                trailingIcon = {
+                    val image = if (passwordVisible) R.drawable.ic_visibility_on else R.drawable.ic_visibility_off
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(painter = painterResource(id = image), contentDescription = "Mostrar/Ocultar contraseña")
+                    }
+                }
             )
 
             loginError?.let {
@@ -198,7 +211,7 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
 
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "Forgot password?",
+                text = "Olvidé mi contraseña",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
@@ -212,74 +225,8 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                     .padding(vertical = 4.dp)
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
-            Button(
-                onClick = {
-                    isLoadingGoogle = true
-                    loginError = null
-                    googleSignInClient.signOut().addOnCompleteListener {
-                        val signInIntent = googleSignInClient.signInIntent
-                        googleSignInLauncher.launch(signInIntent)
-                    }
-                },
-                enabled = !isLoading && !isLoadingGoogle,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White,
-                    contentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
-                border = BorderStroke(1.dp, Color.LightGray)
-            ) {
-                if (isLoadingGoogle) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.primary, strokeWidth = 2.dp)
-                } else {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_google_logo),
-                            contentDescription = "Google logo",
-                            modifier = Modifier.size(24.dp),
-                            tint = Color.Unspecified
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "Continue with Google",
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-            Button(
-                onClick = { Toast.makeText(context, "Inicio con Facebook no implementado", Toast.LENGTH_SHORT).show() },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF2D3748),
-                    contentColor = Color.White
-                ),
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Start,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Facebook,
-                        contentDescription = "Facebook logo",
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(text = "Continue with Facebook", textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
-                }
-            }
-
             Spacer(modifier = Modifier.height(24.dp))
+
             Button(
                 onClick = {
                     if (uiUsername.isNotBlank() && uiPassword.isNotBlank()) {
@@ -289,7 +236,6 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                             try {
                                 val authRequest = AuthRequest(user = uiUsername, password = uiPassword)
                                 val authResponse = authService.loginUser(authRequest)
-
                                 if (authResponse != null && authResponse.token.isNotBlank()) {
                                     TokenManager.saveAuthData(context, authResponse.token, uiUsername)
                                     navController.navigate(AppRoutes.homeScreenWithUsername(uiUsername)) {
@@ -311,17 +257,85 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                     }
                 },
                 enabled = !isLoading && !isLoadingGoogle,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().height(50.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF6B7280),
-                    contentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 shape = MaterialTheme.shapes.medium
             ) {
                 if (isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
                 } else {
-                    Text(text = "Iniciar sesión", style = MaterialTheme.typography.titleMedium)
+                    Text("Iniciar Sesión", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    isLoadingGoogle = true
+                    loginError = null
+                    googleSignInClient.signOut().addOnCompleteListener {
+                        val signInIntent = googleSignInClient.signInIntent
+                        googleSignInLauncher.launch(signInIntent)
+                    }
+                },
+                enabled = !isLoading && !isLoadingGoogle,
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.White,
+                    contentColor = Color(0xFF444444)
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+                border = BorderStroke(1.dp, Color.LightGray)
+            ) {
+                if (isLoadingGoogle) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.primary)
+                } else {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_google_logo),
+                            contentDescription = "Google logo",
+                            modifier = Modifier.size(22.dp),
+                            tint = Color.Unspecified
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "Continuar con Google",
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(
+                onClick = { Toast.makeText(context, "Inicio con Facebook no implementado", Toast.LENGTH_SHORT).show() },
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF1877F2),
+                    contentColor = Color.White
+                ),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Facebook,
+                        contentDescription = "Facebook logo",
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(text = "Continuar con Facebook", fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -334,11 +348,11 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "¿No se registro? ",
+                    text = "¿No tienes cuenta? ",
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    text = "Regístrese en la web",
+                    text = "Regístrate",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
