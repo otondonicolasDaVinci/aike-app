@@ -10,7 +10,8 @@ data class AuthRequest(
 
 @Serializable
 data class AuthResponse(
-    val token: String
+    val token: String,
+    val userId: Long
 )
 
 @Serializable
@@ -20,7 +21,7 @@ data class GoogleLoginApiRequest(
 
 @Serializable
 data class GoogleLoginApiResponse(
-    val token: String, // Tu token JWT
-    val userId: Long,  // El userId de tu sistema
+    val token: String,
+    val userId: Long,
     val email: String
 )

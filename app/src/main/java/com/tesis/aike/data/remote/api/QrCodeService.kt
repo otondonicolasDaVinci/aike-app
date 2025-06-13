@@ -8,6 +8,8 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import java.io.IOException
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 class QrCodeService(private val client: HttpClient = KtorClientProvider.client) {
 
@@ -17,7 +19,9 @@ class QrCodeService(private val client: HttpClient = KtorClientProvider.client) 
         if (token.isNullOrBlank() || userId.isBlank()) {
             throw IOException("Token o UserId no proporcionado.")
         }
-        val finalQrCodeUrl = "$qrCodeBaseUrl/$userId"
+
+        val encodedUserId = URLEncoder.encode(userId.trim(), StandardCharsets.UTF_8.toString())
+        val finalQrCodeUrl = "$qrCodeBaseUrl/$encodedUserId"
 
         val response: HttpResponse = client.get(finalQrCodeUrl) {
             header(HttpHeaders.Authorization, "Bearer $token")
@@ -29,7 +33,7 @@ class QrCodeService(private val client: HttpClient = KtorClientProvider.client) 
             val errorBody = try {
                 response.bodyAsText()
             } catch (e: Exception) {
-                "Error del servidor: ${response.status.value}"
+                "Error del servidor: ${response.status.value} - ${response.status.description}"
             }
             throw IOException(errorBody)
         }

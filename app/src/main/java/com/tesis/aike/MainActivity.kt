@@ -19,13 +19,15 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
-import com.tesis.aike.ui.components.products.ProductScreen
 import com.tesis.aike.ui.home.HomeScreen
 import com.tesis.aike.ui.login.LoginScreen
 import com.tesis.aike.ui.profile.ProfileScreen
+import com.tesis.aike.ui.components.products.ProductScreen
 import com.tesis.aike.ui.components.QR.QrCodeScreen
 import com.tesis.aike.ui.reservation.ReservationScreen
 import com.tesis.aike.ui.theme.AikeTheme
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 object AppRoutes {
     const val USERNAME_ARG = "username"
@@ -48,11 +50,13 @@ object AppRoutes {
     private const val PRODUCTS_ROUTE_BASE = "products"
     const val PRODUCTS_SCREEN_WITH_ARG = "$PRODUCTS_ROUTE_BASE/{$USERNAME_ARG}"
 
-    fun homeScreenWithUsername(username: String) = "$HOME_ROUTE_BASE/$username"
-    fun qrCodeScreenWithUsername(username: String) = "$QR_CODE_ROUTE_BASE/$username"
-    fun profileScreenWithUsername(username: String) = "$PROFILE_ROUTE_BASE/$username"
-    fun reservationScreenWithUsername(username: String) = "$RESERVATION_ROUTE_BASE/$username"
-    fun productsScreenWithUsername(username: String) = "$PRODUCTS_ROUTE_BASE/$username"
+    private fun encode(input: String): String = URLEncoder.encode(input, StandardCharsets.UTF_8.toString())
+
+    fun homeScreenWithUsername(username: String) = "$HOME_ROUTE_BASE/${encode(username)}"
+    fun qrCodeScreenWithUsername(username: String) = "$QR_CODE_ROUTE_BASE/${encode(username)}"
+    fun profileScreenWithUsername(username: String) = "$PROFILE_ROUTE_BASE/${encode(username)}"
+    fun reservationScreenWithUsername(username: String) = "$RESERVATION_ROUTE_BASE/${encode(username)}"
+    fun productsScreenWithUsername(username: String) = "$PRODUCTS_ROUTE_BASE/${encode(username)}"
 
     val HOME_BASE = HOME_ROUTE_BASE
     val QR_CODE_BASE = QR_CODE_ROUTE_BASE
@@ -138,13 +142,13 @@ fun AppNavigation() {
                     Text("Error: Nombre de usuario no encontrado para Reserva.")
                 }
             }
-            composable( // Añade el composable para ProductScreen
+            composable(
                 route = AppRoutes.PRODUCTS_SCREEN_WITH_ARG,
                 arguments = listOf(navArgument(AppRoutes.USERNAME_ARG) { type = NavType.StringType })
             ) { backStackEntry ->
                 val username = backStackEntry.arguments?.getString(AppRoutes.USERNAME_ARG)
                 if (username != null) {
-                    ProductScreen(navController = navController, username = username) // Llama a tu futuro ProductScreen
+                    ProductScreen(navController = navController, username = username)
                 } else {
                     Text("Error: Nombre de usuario no encontrado para Productos.")
                 }

@@ -9,17 +9,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -27,23 +17,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Facebook
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -113,14 +89,13 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                             if (apiResponse != null && apiResponse.token.isNotBlank()) {
                                 TokenManager.saveAuthData(context, apiResponse.token, apiResponse.userId.toString())
                                 Log.d("LoginScreen", "Token de API guardado. UserID: ${apiResponse.userId}")
-                                val displayNameForHome = account.email ?: uiUsername.takeIf { it.isNotBlank() } ?: "UsuarioGoogle"
+                                val displayNameForHome = (account.email ?: "UsuarioGoogle").trim()
                                 navController.navigate(AppRoutes.homeScreenWithUsername(displayNameForHome)) {
                                     popUpTo(AppRoutes.LOGIN_ROUTE) { inclusive = true }
                                     launchSingleTop = true
                                 }
                             } else {
                                 loginError = "Error de autenticación con servidor vía Google."
-                                Log.e("LoginScreen", "loginWithGoogleToken fallido o token API vacío")
                             }
                         } catch (e: Exception) {
                             loginError = "Error inesperado al contactar al servidor."
@@ -131,7 +106,6 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                     }
                 } else {
                     loginError = "No se pudo obtener el token de Google."
-                    Log.e("LoginScreen", "Google ID Token es nulo después de un sign-in exitoso.")
                 }
             } catch (e: ApiException) {
                 loginError = "Error de Google Sign-In: ${e.statusCode}"
@@ -226,19 +200,20 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
             )
 
             Spacer(modifier = Modifier.height(24.dp))
-
             Button(
                 onClick = {
                     if (uiUsername.isNotBlank() && uiPassword.isNotBlank()) {
                         isLoading = true
                         loginError = null
+                        val trimmedUsername = uiUsername.trim()
                         coroutineScope.launch {
                             try {
-                                val authRequest = AuthRequest(user = uiUsername, password = uiPassword)
+                                val authRequest = AuthRequest(user = trimmedUsername, password = uiPassword)
                                 val authResponse = authService.loginUser(authRequest)
+
                                 if (authResponse != null && authResponse.token.isNotBlank()) {
-                                    TokenManager.saveAuthData(context, authResponse.token, uiUsername)
-                                    navController.navigate(AppRoutes.homeScreenWithUsername(uiUsername)) {
+                                    TokenManager.saveAuthData(context, authResponse.token, authResponse.userId.toString())
+                                    navController.navigate(AppRoutes.homeScreenWithUsername(trimmedUsername)) {
                                         popUpTo(AppRoutes.LOGIN_ROUTE) { inclusive = true }
                                         launchSingleTop = true
                                     }
@@ -257,7 +232,9 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                     }
                 },
                 enabled = !isLoading && !isLoadingGoogle,
-                modifier = Modifier.fillMaxWidth().height(50.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
@@ -272,7 +249,6 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
             Button(
                 onClick = {
                     isLoadingGoogle = true
@@ -283,7 +259,9 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                     }
                 },
                 enabled = !isLoading && !isLoadingGoogle,
-                modifier = Modifier.fillMaxWidth().height(50.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.White,
                     contentColor = Color(0xFF444444)
@@ -317,7 +295,9 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
             Spacer(modifier = Modifier.height(12.dp))
             Button(
                 onClick = { Toast.makeText(context, "Inicio con Facebook no implementado", Toast.LENGTH_SHORT).show() },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF1877F2),
                     contentColor = Color.White

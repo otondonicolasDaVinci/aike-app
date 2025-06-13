@@ -9,6 +9,8 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 class ReservationService(private val client: HttpClient = KtorClientProvider.client) {
 
@@ -19,7 +21,10 @@ class ReservationService(private val client: HttpClient = KtorClientProvider.cli
             println("ReservationService - Error: Token o UserId no proporcionado.")
             return null
         }
-        val url = "$reservationsBaseUrl/user/$userId"
+
+        val encodedUserId = URLEncoder.encode(userId.trim(), StandardCharsets.UTF_8.toString())
+        val url = "$reservationsBaseUrl/user/$encodedUserId"
+
         return try {
             val response: HttpResponse = client.get(url) {
                 header(HttpHeaders.Authorization, "Bearer $token")

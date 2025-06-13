@@ -1,9 +1,9 @@
-package com.tesis.aike.data.remote.api // O tu paquete
+package com.tesis.aike.data.remote.api
 
-import com.tesis.aike.data.remote.dto.AuthRequest // Para el login normal
-import com.tesis.aike.data.remote.dto.AuthResponse // Para el login normal y refresh
-import com.tesis.aike.data.remote.dto.GoogleLoginApiRequest // NUEVA
-import com.tesis.aike.data.remote.dto.GoogleLoginApiResponse // NUEVA
+import com.tesis.aike.data.remote.dto.AuthRequest
+import com.tesis.aike.data.remote.dto.AuthResponse
+import com.tesis.aike.data.remote.dto.GoogleLoginApiRequest
+import com.tesis.aike.data.remote.dto.GoogleLoginApiResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.header
@@ -50,7 +50,7 @@ class AuthService(private val client: HttpClient = KtorClientProvider.client) {
                 response.body<GoogleLoginApiResponse>()
             } else {
                 println("AuthService - Error en login con Google Token: ${response.status.value}")
-                println("AuthService - Cuerpo del error: ${response.body<String>()}") // Intenta leer el cuerpo como String
+                println("AuthService - Cuerpo del error: ${response.body<String>()}")
                 null
             }
         } catch (e: Exception) {

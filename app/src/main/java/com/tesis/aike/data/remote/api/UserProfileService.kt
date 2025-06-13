@@ -8,6 +8,8 @@ import io.ktor.client.request.header
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 class UserProfileService(private val client: HttpClient = KtorClientProvider.client) {
 
@@ -18,13 +20,17 @@ class UserProfileService(private val client: HttpClient = KtorClientProvider.cli
             println("UserProfileService - Error: Token o UserId no proporcionado.")
             return null
         }
-        val profileUrl = "$usersBaseUrl/$userId"
+        val encodedUserId = URLEncoder.encode(userId.trim(), StandardCharsets.UTF_8.toString())
+        val profileUrl = "$usersBaseUrl/$encodedUserId"
+
         return try {
             val response: HttpResponse = client.get(profileUrl) {
                 header(HttpHeaders.Authorization, "Bearer $token")
             }
-            if (response.status == HttpStatusCode.OK) response.body<UserProfileData>() else {
-                println("UserProfileService - Error al obtener perfil: ${response.status.value}")
+            if (response.status == HttpStatusCode.OK) {
+                response.body<UserProfileData>()
+            } else {
+                println("UserProfileService - Error al obtener perfil: ${response.status.value} - ${response.status.description}")
                 if (response.status == HttpStatusCode.Unauthorized || response.status == HttpStatusCode.Forbidden) {
                     println("UserProfileService - Token inválido/expirado en getUserProfile.")
                 }
