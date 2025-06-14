@@ -1,4 +1,4 @@
-// En tu archivo de DTOs (ej. NetworkModels.kt o ChatResponse.kt)
+
 package com.tesis.aike.data.remote.dto
 
 import kotlinx.serialization.SerialName

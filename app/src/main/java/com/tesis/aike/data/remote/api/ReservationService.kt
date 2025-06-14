@@ -1,6 +1,7 @@
 package com.tesis.aike.data.remote.api
 
 import com.tesis.aike.data.remote.dto.ReservationData
+import com.tesis.aike.util.Constants
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -14,7 +15,7 @@ import java.nio.charset.StandardCharsets
 
 class ReservationService(private val client: HttpClient = KtorClientProvider.client) {
 
-    private val reservationsBaseUrl = "http://10.0.2.2:8080/reservations"
+    private val reservationsBaseUrl = "${Constants.API_BASE_URL}/reservations"
 
     suspend fun getUserReservations(userId: String, token: String?): List<ReservationData>? {
         if (token.isNullOrBlank() || userId.isBlank()) {

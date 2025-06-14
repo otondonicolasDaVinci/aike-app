@@ -50,8 +50,8 @@ class ReservationViewModel(application: Application) : AndroidViewModel(applicat
             try {
                 val reservations = reservationService.getUserReservations(userId, token)
                 if (!reservations.isNullOrEmpty()) {
-                    // Lógica para seleccionar la reserva activa/relevante.
-                    // Por ahora, tomamos la primera o la primera con status "ACTIVA" (ajusta según tu lógica)
+                    
+                    
                     _activeReservation.value = reservations.firstOrNull { it.status?.equals("ACTIVA", ignoreCase = true) == true }
                         ?: reservations.firstOrNull()
 
@@ -61,10 +61,10 @@ class ReservationViewModel(application: Application) : AndroidViewModel(applicat
                         _errorMessage.value = "No tienes reservas."
                     }
 
-                } else if (reservations == null) { // Error de API
+                } else if (reservations == null) { 
                     _errorMessage.value = "No se pudo obtener la información de la reserva."
                 }
-                else { // Lista vacía
+                else { 
                     _errorMessage.value = "No tienes reservas."
                 }
             } catch (e: Exception) {

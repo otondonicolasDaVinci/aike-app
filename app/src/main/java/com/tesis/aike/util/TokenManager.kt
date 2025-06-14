@@ -1,4 +1,4 @@
-package com.tesis.aike.util // O el paquete donde lo tengas
+package com.tesis.aike.util 
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -12,15 +12,15 @@ object TokenManager {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
 
-    // 3. ASEGÚRATE DE QUE ESTA FUNCIÓN EXISTA Y TENGA ESTA FIRMA:
+    
     fun saveToken(context: Context, token: String) {
         val editor = getPreferences(context).edit()
         editor.putString(KEY_AUTH_TOKEN, token)
         editor.apply()
     }
 
-    // Esta es la función que habías modificado para guardar ambos:
-    // Si estás usando esta, entonces en ChatViewModel deberías llamar a saveAuthData
+    
+    
     fun saveAuthData(context: Context, token: String, userId: String) {
         val editor = getPreferences(context).edit()
         editor.putString(KEY_AUTH_TOKEN, token)

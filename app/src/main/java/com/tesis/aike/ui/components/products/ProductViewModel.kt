@@ -1,13 +1,13 @@
 package com.tesis.aike.ui.components.products
 
-import android.app.Application // Necesario para AndroidViewModel
+import android.app.Application 
 import android.util.Log
-import androidx.lifecycle.AndroidViewModel // Cambia a AndroidViewModel
+import androidx.lifecycle.AndroidViewModel 
 import androidx.lifecycle.viewModelScope
-import com.tesis.aike.data.remote.api.ProductService // Importa el nuevo servicio
+import com.tesis.aike.data.remote.api.ProductService 
 import com.tesis.aike.domain.model.CartItem
 import com.tesis.aike.domain.model.Product
-import com.tesis.aike.util.TokenManager // Para obtener el token si es necesario
+import com.tesis.aike.util.TokenManager 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -17,10 +17,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class ProductViewModel(application: Application) : AndroidViewModel(application) { // Hereda de AndroidViewModel
+class ProductViewModel(application: Application) : AndroidViewModel(application) { 
 
-    private val productService = ProductService() // Instancia del nuevo servicio
-    private val appContext = application.applicationContext // Contexto para TokenManager
+    private val productService = ProductService() 
+    private val appContext = application.applicationContext 
 
     private val _productsByCategory = MutableStateFlow<Map<String, List<Product>>>(emptyMap())
     val productsByCategory: StateFlow<Map<String, List<Product>>> = _productsByCategory.asStateFlow()
@@ -58,7 +58,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
 
 
     init {
-        fetchProducts() // Llama a cargar productos al iniciar el ViewModel
+        fetchProducts() 
     }
 
     fun fetchProducts() {
@@ -67,15 +67,15 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             _isLoadingProducts.value = true
             _productErrorMessage.value = null
-            // El endpoint de productos puede o no necesitar token.
-            // Si es público, puedes pasar null o un token vacío.
-            // Si es protegido, obtén el token real.
+            
+            
+            
             val token = TokenManager.getToken(appContext)
 
             try {
                 val fetchedProducts = productService.getAllProducts(token)
                 if (fetchedProducts != null) {
-                    // Agrupa los productos por categoría
+                    
                     _productsByCategory.value = fetchedProducts.groupBy { it.category }
                 } else {
                     _productErrorMessage.value = "No se pudieron cargar los productos."
@@ -90,14 +90,14 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     }
 
 
-    fun getQuantityInCart(productId: Long): Int { // Cambiado a Long para coincidir con Product.id
-        return _cartItemsMap.value[productId.toString()]?.quantity ?: 0 // El mapa usa String como clave
+    fun getQuantityInCart(productId: Long): Int { 
+        return _cartItemsMap.value[productId.toString()]?.quantity ?: 0 
     }
 
     fun addToCart(product: Product) {
         _cartItemsMap.update { currentCart ->
             val mutableCart = currentCart.toMutableMap()
-            val cartItem = mutableCart[product.id.toString()] // Usa product.id.toString()
+            val cartItem = mutableCart[product.id.toString()] 
             if (cartItem != null) {
                 mutableCart[product.id.toString()] = cartItem.copy(quantity = cartItem.quantity + 1)
             } else {
@@ -124,7 +124,7 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun updateQuantityInCartPanel(productId: Long, newQuantity: Int) { // Cambiado a Long
+    fun updateQuantityInCartPanel(productId: Long, newQuantity: Int) { 
         _cartItemsMap.update { currentCart ->
             val mutableCart = currentCart.toMutableMap()
             val cartItem = mutableCart[productId.toString()]

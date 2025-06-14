@@ -1,4 +1,4 @@
-package com.tesis.aike.data.remote.dto // O el paquete que uses para DTOs/modelos de red
+package com.tesis.aike.data.remote.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

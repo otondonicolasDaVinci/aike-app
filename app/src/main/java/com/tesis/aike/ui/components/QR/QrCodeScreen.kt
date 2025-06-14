@@ -24,11 +24,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.tesis.aike.AppRoutes
-import com.tesis.aike.ui.components.QR.QrCodeViewModel
 import com.tesis.aike.ui.home.AppBottomNavigationBar
 import com.tesis.aike.ui.home.BottomNavItem
 import com.tesis.aike.ui.theme.AikeTheme
-
 
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -59,7 +57,7 @@ fun QrCodeScreen(
             AppBottomNavigationBar(
                 navController = navController,
                 items = bottomNavItems,
-                currentUsername = username, // Pasa el username
+                currentUsername = username, 
                 onVikingTabAlreadyHome = {
                     val homeRoute = AppRoutes.homeScreenWithUsername(username)
                     if (navController.currentDestination?.route != homeRoute) {

@@ -46,6 +46,7 @@ import com.tesis.aike.R
 import com.tesis.aike.data.remote.api.AuthService
 import com.tesis.aike.data.remote.dto.AuthRequest
 import com.tesis.aike.ui.theme.AikeTheme
+import com.tesis.aike.util.JwtDecoder
 import com.tesis.aike.util.TokenManager
 import kotlinx.coroutines.launch
 
@@ -81,25 +82,27 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                 val account: GoogleSignInAccount = task.getResult(ApiException::class.java)
                 val idToken = account.idToken
                 if (idToken != null) {
-                    Log.d("LoginScreen", "Google ID Token obtenido")
                     coroutineScope.launch {
                         isLoadingGoogle = true
                         try {
                             val apiResponse = authService.loginWithGoogleToken(idToken)
                             if (apiResponse != null && apiResponse.token.isNotBlank()) {
-                                TokenManager.saveAuthData(context, apiResponse.token, apiResponse.userId.toString())
-                                Log.d("LoginScreen", "Token de API guardado. UserID: ${apiResponse.userId}")
-                                val displayNameForHome = (account.email ?: "UsuarioGoogle").trim()
-                                navController.navigate(AppRoutes.homeScreenWithUsername(displayNameForHome)) {
-                                    popUpTo(AppRoutes.LOGIN_ROUTE) { inclusive = true }
-                                    launchSingleTop = true
+                                val userIdFromToken = JwtDecoder.getUserIdFromToken(apiResponse.token)
+                                if (userIdFromToken != null) {
+                                    TokenManager.saveAuthData(context, apiResponse.token, userIdFromToken)
+                                    val displayNameForHome = (account.email ?: "UsuarioGoogle").trim()
+                                    navController.navigate(AppRoutes.homeScreenWithUsername(displayNameForHome)) {
+                                        popUpTo(AppRoutes.LOGIN_ROUTE) { inclusive = true }
+                                        launchSingleTop = true
+                                    }
+                                } else {
+                                    loginError = "No se pudo obtener el ID del usuario desde el token."
                                 }
                             } else {
                                 loginError = "Error de autenticación con servidor vía Google."
                             }
                         } catch (e: Exception) {
                             loginError = "Error inesperado al contactar al servidor."
-                            Log.e("LoginScreen", "Excepción en coroutine de Google Login", e)
                         } finally {
                             isLoadingGoogle = false
                         }
@@ -109,11 +112,9 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                 }
             } catch (e: ApiException) {
                 loginError = "Error de Google Sign-In: ${e.statusCode}"
-                Log.e("LoginScreen", "Error de Google Sign-In", e)
             }
         } else {
             loginError = "Inicio de sesión con Google cancelado o fallido."
-            Log.w("LoginScreen", "Google Sign-In fallido, resultCode: ${result.resultCode}")
         }
     }
 
@@ -212,10 +213,15 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                                 val authResponse = authService.loginUser(authRequest)
 
                                 if (authResponse != null && authResponse.token.isNotBlank()) {
-                                    TokenManager.saveAuthData(context, authResponse.token, authResponse.userId.toString())
-                                    navController.navigate(AppRoutes.homeScreenWithUsername(trimmedUsername)) {
-                                        popUpTo(AppRoutes.LOGIN_ROUTE) { inclusive = true }
-                                        launchSingleTop = true
+                                    val userIdFromToken = JwtDecoder.getUserIdFromToken(authResponse.token)
+                                    if (userIdFromToken != null) {
+                                        TokenManager.saveAuthData(context, authResponse.token, userIdFromToken)
+                                        navController.navigate(AppRoutes.homeScreenWithUsername(trimmedUsername)) {
+                                            popUpTo(AppRoutes.LOGIN_ROUTE) { inclusive = true }
+                                            launchSingleTop = true
+                                        }
+                                    } else {
+                                        loginError = "Error al procesar el token recibido."
                                     }
                                 } else {
                                     loginError = "Usuario o contraseña incorrectos."

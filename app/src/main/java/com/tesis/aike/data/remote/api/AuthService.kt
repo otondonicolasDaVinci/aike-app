@@ -14,10 +14,11 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import com.tesis.aike.util.Constants
 
 class AuthService(private val client: HttpClient = KtorClientProvider.client) {
 
-    private val baseUrl = "http://10.0.2.2:8080"
+    private val baseUrl = Constants.API_BASE_URL
     private val regularLoginUrl = "$baseUrl/auth/login"
     private val googleLoginUrl = "$baseUrl/auth/login-google"
     private val refreshUrl = "$baseUrl/auth/refresh"

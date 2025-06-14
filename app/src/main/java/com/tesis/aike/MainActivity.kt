@@ -1,6 +1,5 @@
 package com.tesis.aike
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -19,11 +18,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
+import com.tesis.aike.ui.components.QR.QrCodeScreen
+import com.tesis.aike.ui.components.products.ProductScreen
 import com.tesis.aike.ui.home.HomeScreen
 import com.tesis.aike.ui.login.LoginScreen
 import com.tesis.aike.ui.profile.ProfileScreen
-import com.tesis.aike.ui.components.products.ProductScreen
-import com.tesis.aike.ui.components.QR.QrCodeScreen
 import com.tesis.aike.ui.reservation.ReservationScreen
 import com.tesis.aike.ui.theme.AikeTheme
 import java.net.URLEncoder

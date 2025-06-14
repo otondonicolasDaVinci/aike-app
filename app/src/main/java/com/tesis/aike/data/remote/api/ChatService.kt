@@ -12,10 +12,11 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import com.tesis.aike.util.Constants
 
 class ChatService(private val client: HttpClient = KtorClientProvider.client) {
 
-    private val chatEndpointUrl = "http://10.0.2.2:8080/v1/aike/ia/text/prompt"
+    private val chatEndpointUrl = "${Constants.API_BASE_URL}/v1/aike/ia/text/prompt"
 
     suspend fun sendMessage(userInput: String, token: String?): ChatResponse? {
         if (token.isNullOrBlank()) {

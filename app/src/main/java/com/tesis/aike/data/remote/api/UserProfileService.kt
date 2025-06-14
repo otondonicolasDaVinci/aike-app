@@ -1,6 +1,7 @@
 package com.tesis.aike.data.remote.api
 
 import com.tesis.aike.data.remote.dto.UserProfileData
+import com.tesis.aike.util.Constants
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -13,7 +14,7 @@ import java.nio.charset.StandardCharsets
 
 class UserProfileService(private val client: HttpClient = KtorClientProvider.client) {
 
-    private val usersBaseUrl = "http://10.0.2.2:8080/users"
+    private val usersBaseUrl = "${Constants.API_BASE_URL}/users"
 
     suspend fun getUserProfile(userId: String, token: String?): UserProfileData? {
         if (token.isNullOrBlank() || userId.isBlank()) {

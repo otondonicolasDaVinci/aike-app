@@ -10,10 +10,11 @@ import io.ktor.http.HttpStatusCode
 import java.io.IOException
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import com.tesis.aike.util.Constants
 
 class QrCodeService(private val client: HttpClient = KtorClientProvider.client) {
 
-    private val qrCodeBaseUrl = "http://10.0.2.2:8080/api/qrcode"
+    private val qrCodeBaseUrl = "${Constants.API_BASE_URL}/api/qrcode"
 
     suspend fun getQrCodeBase64(userId: String, token: String?): String {
         if (token.isNullOrBlank() || userId.isBlank()) {
