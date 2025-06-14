@@ -1,4 +1,4 @@
-package com.tesis.aike.ui.components.products
+package com.tesis.aike.ui.products
 
 import android.annotation.SuppressLint
 import android.util.Log
@@ -7,52 +7,21 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -70,12 +39,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.tesis.aike.AppRoutes
 import com.tesis.aike.R
 import com.tesis.aike.domain.model.CartItem
 import com.tesis.aike.domain.model.Product
-import com.tesis.aike.ui.home.AppBottomNavigationBar
-import com.tesis.aike.ui.home.BottomNavItem
+import com.tesis.aike.ui.components.products.ProductViewModel
 import com.tesis.aike.ui.theme.AikeTheme
 import java.text.NumberFormat
 import java.util.Locale
@@ -84,17 +51,10 @@ import java.util.Locale
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun ProductScreen(
-    navController: NavController,
+    rootNavController: NavController,
     username: String,
     productViewModel: ProductViewModel = viewModel()
 ) {
-    val bottomNavItems = listOf(
-        BottomNavItem.Viking,
-        BottomNavItem.Hut,
-        BottomNavItem.Key,
-        BottomNavItem.Bag,
-        BottomNavItem.Profile
-    )
     val productsByCategory by productViewModel.productsByCategory.collectAsStateWithLifecycle()
     val totalCartQuantity by productViewModel.totalCartQuantity.collectAsStateWithLifecycle()
     val cartItemsList by productViewModel.cartItems.collectAsStateWithLifecycle()
@@ -132,26 +92,13 @@ fun ProductScreen(
                         titleContentColor = MaterialTheme.colorScheme.onSurface
                     )
                 )
-            },
-            bottomBar = {
-                AppBottomNavigationBar(
-                    navController = navController,
-                    items = bottomNavItems,
-                    currentUsername = username,
-                    onVikingTabAlreadyHome = {
-                        val homeRoute = AppRoutes.homeScreenWithUsername(username)
-                        if (navController.currentDestination?.route != homeRoute) {
-                            navController.navigate(homeRoute) {
-                                popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        }
-                    }
-                )
             }
         ) { innerPadding ->
-            Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
                 if (isLoadingProducts) {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 } else if (productErrorMessage != null) {
@@ -159,16 +106,19 @@ fun ProductScreen(
                         text = productErrorMessage ?: "Error cargando productos",
                         color = MaterialTheme.colorScheme.error,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.align(Alignment.Center).padding(16.dp)
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(16.dp)
                     )
-                } else if (productsByCategory.isEmpty()){
+                } else if (productsByCategory.isEmpty()) {
                     Text(
                         text = "No hay productos disponibles en este momento.",
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.align(Alignment.Center).padding(16.dp)
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(16.dp)
                     )
-                }
-                else {
+                } else {
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
@@ -243,7 +193,7 @@ fun ProductCard(
                     .background(Color.LightGray)
                     .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
                 contentAlignment = Alignment.Center
-            ){
+            ) {
                 Image(
                     painter = painterResource(id = R.drawable.aike_logo),
                     contentDescription = product.title,
@@ -382,46 +332,54 @@ fun CartPanel(
     }
 }
 
+@Composable
+fun CartItemRow(
+    cartItem: CartItem,
+    currencyFormatter: NumberFormat,
+    onQuantityChange: (Int) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(60.dp)
+                .background(Color.LightGray, RoundedCornerShape(4.dp))
+                .clip(RoundedCornerShape(4.dp)),
+            contentAlignment = Alignment.Center
+        ){
+            Image(
+                painter = painterResource(id = R.drawable.aike_logo),
+                contentDescription = cartItem.product.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(cartItem.product.title, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(currencyFormatter.format(cartItem.product.price), fontSize = 12.sp, color = Color.Gray)
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = { onQuantityChange(cartItem.quantity - 1) }, Modifier.size(30.dp)) {
+                Icon(Icons.Filled.Remove, "Quitar", tint = MaterialTheme.colorScheme.primary)
+            }
+            Text(cartItem.quantity.toString(), modifier = Modifier.padding(horizontal = 4.dp))
+            IconButton(onClick = { onQuantityChange(cartItem.quantity + 1) }, Modifier.size(30.dp)) {
+                Icon(Icons.Filled.Add, "Agregar", tint = MaterialTheme.colorScheme.primary)
+            }
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun ProductScreenPreview() {
     AikeTheme {
-        ProductScreen(navController = rememberNavController(), username = "TestUser")
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun ProductCardPreview() {
-    AikeTheme {
-        ProductCard(
-            product = Product(id = 1L, title = "Mermelada de Frutilla", description = "Deliciosa mermelada artesanal.", price = 1500.0, imageUrl = null, category = "Mermelada"),
-            quantityInCart = 1,
-            onAddToCart = {},
-            onRemoveFromCart = {}
-        )
-    }
-}
-
-@Preview
-@Composable
-fun CartPanelFilledPreview() {
-    AikeTheme {
-        val sampleProducts = listOf(
-            Product(id = 1L, title = "Mermelada de Frutilla", description = "Desc. Frutilla", price = 1500.0, imageUrl = null, category = "Mermelada"),
-            Product(id = 2L, title = "Chocolate Amargo", description = "Desc. Chocolate", price = 2500.0, imageUrl = null, category = "Chocolates")
-        )
-        val sampleCartItems = listOf(
-            CartItem(sampleProducts[0], 2),
-            CartItem(sampleProducts[1], 1)
-        )
-        CartPanel(
-            isVisible = true,
-            cartItems = sampleCartItems,
-            totalPrice = sampleCartItems.sumOf { it.product.price * it.quantity },
-            onDismiss = {},
-            onUpdateQuantity = { _, _ -> },
-            onCheckout = {}
-        )
+        ProductScreen(rootNavController = rememberNavController(), username = "TestUser")
     }
 }

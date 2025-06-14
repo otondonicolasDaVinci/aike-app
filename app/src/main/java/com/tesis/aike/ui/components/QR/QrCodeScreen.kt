@@ -1,4 +1,4 @@
-package com.tesis.aike.ui.components.QR
+package com.tesis.aike.ui.qrcode
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -19,20 +18,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.tesis.aike.AppRoutes
-import com.tesis.aike.ui.home.AppBottomNavigationBar
-import com.tesis.aike.ui.home.BottomNavItem
+import com.tesis.aike.ui.components.QR.QrCodeViewModel
 import com.tesis.aike.ui.theme.AikeTheme
-
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun QrCodeScreen(
-    navController: NavController,
+    rootNavController: NavController,
     username: String
 ) {
     val qrViewModel: QrCodeViewModel = viewModel()
@@ -44,56 +41,31 @@ fun QrCodeScreen(
         qrViewModel.fetchQrCode()
     }
 
-    val bottomNavItems = listOf(
-        BottomNavItem.Viking,
-        BottomNavItem.Hut,
-        BottomNavItem.Key,
-        BottomNavItem.Bag,
-        BottomNavItem.Profile
-    )
-
-    Scaffold(
-        bottomBar = {
-            AppBottomNavigationBar(
-                navController = navController,
-                items = bottomNavItems,
-                currentUsername = username, 
-                onVikingTabAlreadyHome = {
-                    val homeRoute = AppRoutes.homeScreenWithUsername(username)
-                    if (navController.currentDestination?.route != homeRoute) {
-                        navController.navigate(homeRoute) {
-                            popUpTo(navController.graph.startDestinationId) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    }
-                }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black),
+        contentAlignment = Alignment.Center
+    ) {
+        if (isLoading) {
+            CircularProgressIndicator(color = Color.White)
+        } else if (errorMessage != null) {
+            Text(
+                text = errorMessage ?: "Error desconocido",
+                color = Color.Red,
+                modifier = Modifier.padding(16.dp)
             )
-        }
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-                .padding(innerPadding),
-            contentAlignment = Alignment.Center
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(color = Color.White)
-            } else if (errorMessage != null) {
-                Text(text = errorMessage ?: "Error desconocido", color = Color.Red)
-            } else if (qrBitmap != null) {
-                Image(
-                    bitmap = qrBitmap!!,
-                    contentDescription = "Código QR para desbloqueo",
-                    modifier = Modifier
-                        .fillMaxWidth(0.8f)
-                        .aspectRatio(1f),
-                    contentScale = ContentScale.Fit
-                )
-            } else {
-                Text("Generando código QR...", color = Color.White)
-            }
+        } else if (qrBitmap != null) {
+            Image(
+                bitmap = qrBitmap!!,
+                contentDescription = "Código QR para desbloqueo",
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .aspectRatio(1f),
+                contentScale = ContentScale.Fit
+            )
+        } else {
+            Text("Generando código QR...", color = Color.White)
         }
     }
 }
@@ -102,6 +74,9 @@ fun QrCodeScreen(
 @Composable
 fun QrCodeScreenPreview() {
     AikeTheme {
-        QrCodeScreen(navController = rememberNavController(), username = "UsuarioPreview")
+        QrCodeScreen(
+            rootNavController = rememberNavController(),
+            username = "UsuarioPreview"
+        )
     }
 }

@@ -7,61 +7,29 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import androidx.navigation.navigation
-import com.tesis.aike.ui.components.QR.QrCodeScreen
-import com.tesis.aike.ui.components.products.ProductScreen
-import com.tesis.aike.ui.home.HomeScreen
+import com.tesis.aike.ui.MainScreen
 import com.tesis.aike.ui.login.LoginScreen
-import com.tesis.aike.ui.profile.ProfileScreen
-import com.tesis.aike.ui.reservation.ReservationScreen
 import com.tesis.aike.ui.theme.AikeTheme
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 object AppRoutes {
     const val USERNAME_ARG = "username"
+    const val LOGIN_ROUTE = "login"
+    const val MAIN_APP_ROUTE = "main/{$USERNAME_ARG}"
 
-    const val LOGIN_ROUTE = "login_flow"
-    const val MAIN_APP_GRAPH_ROUTE = "main_app_graph"
-
-    private const val HOME_ROUTE_BASE = "home"
-    const val HOME_SCREEN_WITH_ARG = "$HOME_ROUTE_BASE/{$USERNAME_ARG}"
-
-    private const val QR_CODE_ROUTE_BASE = "qrcode"
-    const val QR_CODE_SCREEN_WITH_ARG = "$QR_CODE_ROUTE_BASE/{$USERNAME_ARG}"
-
-    private const val PROFILE_ROUTE_BASE = "profile"
-    const val PROFILE_SCREEN_WITH_ARG = "$PROFILE_ROUTE_BASE/{$USERNAME_ARG}"
-
-    private const val RESERVATION_ROUTE_BASE = "reservation"
-    const val RESERVATION_SCREEN_WITH_ARG = "$RESERVATION_ROUTE_BASE/{$USERNAME_ARG}"
-
-    private const val PRODUCTS_ROUTE_BASE = "products"
-    const val PRODUCTS_SCREEN_WITH_ARG = "$PRODUCTS_ROUTE_BASE/{$USERNAME_ARG}"
-
-    private fun encode(input: String): String = URLEncoder.encode(input, StandardCharsets.UTF_8.toString())
-
-    fun homeScreenWithUsername(username: String) = "$HOME_ROUTE_BASE/${encode(username)}"
-    fun qrCodeScreenWithUsername(username: String) = "$QR_CODE_ROUTE_BASE/${encode(username)}"
-    fun profileScreenWithUsername(username: String) = "$PROFILE_ROUTE_BASE/${encode(username)}"
-    fun reservationScreenWithUsername(username: String) = "$RESERVATION_ROUTE_BASE/${encode(username)}"
-    fun productsScreenWithUsername(username: String) = "$PRODUCTS_ROUTE_BASE/${encode(username)}"
-
-    val HOME_BASE = HOME_ROUTE_BASE
-    val QR_CODE_BASE = QR_CODE_ROUTE_BASE
-    val PROFILE_BASE = PROFILE_ROUTE_BASE
-    val RESERVATION_BASE = RESERVATION_ROUTE_BASE
-    val PRODUCTS_BASE = PRODUCTS_ROUTE_BASE
+    fun mainScreenWithUsername(username: String): String {
+        val encodedUsername = URLEncoder.encode(username, StandardCharsets.UTF_8.toString())
+        return "main/$encodedUsername"
+    }
 }
 
 class MainActivity : ComponentActivity() {
@@ -92,74 +60,12 @@ fun AppNavigation() {
         composable(route = AppRoutes.LOGIN_ROUTE) {
             LoginScreen(navController = navController)
         }
-
-        navigation(
-            startDestination = AppRoutes.HOME_SCREEN_WITH_ARG,
-            route = AppRoutes.MAIN_APP_GRAPH_ROUTE
-        ) {
-            composable(
-                route = AppRoutes.HOME_SCREEN_WITH_ARG,
-                arguments = listOf(navArgument(AppRoutes.USERNAME_ARG) { type = NavType.StringType })
-            ) { backStackEntry ->
-                val username = backStackEntry.arguments?.getString(AppRoutes.USERNAME_ARG)
-                if (username != null) {
-                    HomeScreen(navController = navController, username = username)
-                } else {
-                    Text("Error: Nombre de usuario no encontrado para Home.")
-                }
-            }
-            composable(
-                route = AppRoutes.QR_CODE_SCREEN_WITH_ARG,
-                arguments = listOf(navArgument(AppRoutes.USERNAME_ARG) { type = NavType.StringType })
-            ) { backStackEntry ->
-                val username = backStackEntry.arguments?.getString(AppRoutes.USERNAME_ARG)
-                if (username != null) {
-                    QrCodeScreen(navController = navController, username = username)
-                } else {
-                    Text("Error: Nombre de usuario no encontrado para QR.")
-                }
-            }
-            composable(
-                route = AppRoutes.PROFILE_SCREEN_WITH_ARG,
-                arguments = listOf(navArgument(AppRoutes.USERNAME_ARG) { type = NavType.StringType })
-            ) { backStackEntry ->
-                val username = backStackEntry.arguments?.getString(AppRoutes.USERNAME_ARG)
-                if (username != null) {
-                    ProfileScreen(navController = navController, username = username)
-                } else {
-                    Text("Error: Nombre de usuario no encontrado para Perfil.")
-                }
-            }
-            composable(
-                route = AppRoutes.RESERVATION_SCREEN_WITH_ARG,
-                arguments = listOf(navArgument(AppRoutes.USERNAME_ARG) { type = NavType.StringType })
-            ) { backStackEntry ->
-                val username = backStackEntry.arguments?.getString(AppRoutes.USERNAME_ARG)
-                if (username != null) {
-                    ReservationScreen(navController = navController, username = username)
-                } else {
-                    Text("Error: Nombre de usuario no encontrado para Reserva.")
-                }
-            }
-            composable(
-                route = AppRoutes.PRODUCTS_SCREEN_WITH_ARG,
-                arguments = listOf(navArgument(AppRoutes.USERNAME_ARG) { type = NavType.StringType })
-            ) { backStackEntry ->
-                val username = backStackEntry.arguments?.getString(AppRoutes.USERNAME_ARG)
-                if (username != null) {
-                    ProductScreen(navController = navController, username = username)
-                } else {
-                    Text("Error: Nombre de usuario no encontrado para Productos.")
-                }
-            }
+        composable(
+            route = AppRoutes.MAIN_APP_ROUTE,
+            arguments = listOf(navArgument(AppRoutes.USERNAME_ARG) { type = NavType.StringType })
+        ) { backStackEntry ->
+            val username = backStackEntry.arguments?.getString(AppRoutes.USERNAME_ARG) ?: "Usuario"
+            MainScreen(rootNavController = navController, username = username)
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    AikeTheme {
-        AppNavigation()
     }
 }

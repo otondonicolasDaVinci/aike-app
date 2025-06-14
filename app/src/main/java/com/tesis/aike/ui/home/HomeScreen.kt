@@ -1,7 +1,5 @@
 package com.tesis.aike.ui.home
 
-import android.annotation.SuppressLint
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,21 +19,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -43,7 +33,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -55,157 +44,61 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.tesis.aike.AppRoutes
 import com.tesis.aike.R
 import com.tesis.aike.domain.model.ChatMessage
 import com.tesis.aike.ui.theme.AikeTheme
 
-sealed class BottomNavItem(val routeId: String, val icon: ImageVector, val labelForAccessibility: String) {
-    object Viking : BottomNavItem(AppRoutes.HOME_BASE, Icons.Filled.Shield, "Principal Aike")
-    object Hut : BottomNavItem(AppRoutes.RESERVATION_BASE, Icons.Filled.Home, "Mi Reserva")
-    object Key : BottomNavItem(AppRoutes.QR_CODE_BASE, Icons.Filled.Key, "Claves QR")
-    object Bag : BottomNavItem(AppRoutes.PRODUCTS_BASE, Icons.Filled.ShoppingBag, "Productos")
-    object Profile : BottomNavItem(AppRoutes.PROFILE_BASE, Icons.Filled.Person, "Perfil")
-}
-
 @Composable
-fun AppBottomNavigationBar(
-    navController: NavController,
-    items: List<BottomNavItem>,
-    currentUsername: String,
-    onVikingTabAlreadyHome: () -> Unit
-) {
-    NavigationBar(
-        containerColor = Color(0xFF2C2C2C)
-    ) {
-        val navBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentDestination = navBackStackEntry?.destination
-
-        items.forEach { item ->
-            val destinationRouteWithArg = when (item) {
-                BottomNavItem.Viking -> AppRoutes.homeScreenWithUsername(currentUsername)
-                BottomNavItem.Hut -> AppRoutes.reservationScreenWithUsername(currentUsername)
-                BottomNavItem.Key -> AppRoutes.qrCodeScreenWithUsername(currentUsername)
-                BottomNavItem.Profile -> AppRoutes.profileScreenWithUsername(currentUsername)
-                BottomNavItem.Bag -> AppRoutes.productsScreenWithUsername(currentUsername)
-            }
-
-            val isSelected = currentDestination?.hierarchy?.any { it.route == destinationRouteWithArg } == true
-
-            NavigationBarItem(
-                selected = isSelected,
-                onClick = {
-                    if (currentDestination?.route == destinationRouteWithArg) {
-                        if (item == BottomNavItem.Viking) {
-                            onVikingTabAlreadyHome()
-                        }
-                    } else {
-                        navController.navigate(destinationRouteWithArg) {
-                            popUpTo(AppRoutes.MAIN_APP_GRAPH_ROUTE) { 
-                                saveState = true
-                                inclusive = false 
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    }
-                },
-                icon = {
-                    Icon(
-                        imageVector = item.icon,
-                        contentDescription = item.labelForAccessibility,
-                        tint = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray
-                    )
-                },
-                alwaysShowLabel = false
-            )
-        }
-    }
-}
-
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-@Composable
-fun HomeScreen(
-    modifier: Modifier = Modifier,
-    navController: NavController,
-    username: String
-) {
-    val bottomNavItems = listOf(
-        BottomNavItem.Viking,
-        BottomNavItem.Hut,
-        BottomNavItem.Key,
-        BottomNavItem.Bag,
-        BottomNavItem.Profile
-    )
+fun HomeScreen(rootNavController: NavController, username: String) {
     val chatViewModel: ChatViewModel = viewModel()
     val initialWelcomePending by chatViewModel.initialWelcomePending.collectAsStateWithLifecycle()
-    Log.d("HomeScreen", "Recomposing. initialWelcomePending: $initialWelcomePending, Username: $username")
 
-    Scaffold(
-        bottomBar = {
-            AppBottomNavigationBar(
-                navController = navController,
-                items = bottomNavItems,
-                currentUsername = username,
-                onVikingTabAlreadyHome = {
-                    Log.d("HomeScreen", "onVikingTabAlreadyHome LLLAMADO. initialWelcomePending actual: ${chatViewModel.initialWelcomePending.value}")
-                }
-            )
-        }
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(innerPadding)
-                .clickable(
-                    enabled = initialWelcomePending,
-                    onClick = {
-                        if (initialWelcomePending) {
-                            Log.d("HomeScreen", "Box de Bienvenida CLICKEADO. Llamando a markInitialWelcomeAsShown()")
-                            chatViewModel.markInitialWelcomeAsShown()
-                        }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clickable(
+                enabled = initialWelcomePending,
+                onClick = {
+                    if (initialWelcomePending) {
+                        chatViewModel.markInitialWelcomeAsShown()
                     }
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            if (initialWelcomePending) {
-                Log.d("HomeScreen", "Mostrando Welcome UI porque initialWelcomePending es TRUE")
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(0xFF404040))
-                        .padding(horizontal = 24.dp, vertical = 32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.aike_logo),
-                        contentDescription = "Logo Aike Asistente Vikingo",
-                        modifier = Modifier
-                            .fillMaxWidth(0.6f)
-                            .aspectRatio(1f)
-                            .padding(bottom = 16.dp),
-                        contentScale = ContentScale.Fit
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Text(
-                        text = "¡Hola $username!\nSaludos desde la Patagonia argentina, Soy Aike, tu asistente, y hoy te explicare como usar esta aplicación",
-                        style = TextStyle(
-                            color = Color.White,
-                            fontSize = 18.sp,
-                            textAlign = TextAlign.Center,
-                            lineHeight = 26.sp
-                        ),
-                        fontWeight = FontWeight.Medium
-                    )
                 }
-            } else {
-                Log.d("HomeScreen", "Mostrando ChatInterface porque initialWelcomePending es FALSE")
-                ChatInterface(modifier = Modifier.fillMaxSize())
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        if (initialWelcomePending) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF404040))
+                    .padding(horizontal = 24.dp, vertical = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.aike_logo),
+                    contentDescription = "Logo Aike",
+                    modifier = Modifier
+                        .fillMaxWidth(0.6f)
+                        .aspectRatio(1f)
+                        .padding(bottom = 16.dp),
+                    contentScale = ContentScale.Fit
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = "¡Hola $username!\nSaludos desde la Patagonia argentina, Soy Aike, tu asistente, y hoy te explicare como usar esta aplicación",
+                    style = TextStyle(
+                        color = Color.White,
+                        fontSize = 18.sp,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 26.sp
+                    ),
+                    fontWeight = FontWeight.Medium
+                )
             }
+        } else {
+            ChatInterface(modifier = Modifier.fillMaxSize())
         }
     }
 }
@@ -314,10 +207,10 @@ fun MessageBubble(chatMessage: ChatMessage) {
     }
 }
 
-@Preview(showBackground = true, device = "spec:width=360dp,height=740dp")
+@Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {
     AikeTheme {
-        HomeScreen(navController = rememberNavController(), username = "UsuarioDePrueba")
+        HomeScreen(rootNavController = rememberNavController(), username = "UsuarioDePrueba")
     }
 }

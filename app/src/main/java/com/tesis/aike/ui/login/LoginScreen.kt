@@ -91,7 +91,7 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                                 if (userIdFromToken != null) {
                                     TokenManager.saveAuthData(context, apiResponse.token, userIdFromToken)
                                     val displayNameForHome = (account.email ?: "UsuarioGoogle").trim()
-                                    navController.navigate(AppRoutes.homeScreenWithUsername(displayNameForHome)) {
+                                    navController.navigate(AppRoutes.mainScreenWithUsername(displayNameForHome)) {
                                         popUpTo(AppRoutes.LOGIN_ROUTE) { inclusive = true }
                                         launchSingleTop = true
                                     }
@@ -216,7 +216,7 @@ fun LoginScreen(modifier: Modifier = Modifier, navController: NavController) {
                                     val userIdFromToken = JwtDecoder.getUserIdFromToken(authResponse.token)
                                     if (userIdFromToken != null) {
                                         TokenManager.saveAuthData(context, authResponse.token, userIdFromToken)
-                                        navController.navigate(AppRoutes.homeScreenWithUsername(trimmedUsername)) {
+                                        navController.navigate(AppRoutes.mainScreenWithUsername(trimmedUsername)) {
                                             popUpTo(AppRoutes.LOGIN_ROUTE) { inclusive = true }
                                             launchSingleTop = true
                                         }
