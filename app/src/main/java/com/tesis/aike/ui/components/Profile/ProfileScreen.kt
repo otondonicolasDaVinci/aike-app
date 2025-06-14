@@ -3,6 +3,8 @@ package com.tesis.aike.ui.profile
 import android.annotation.SuppressLint
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material3.Button
@@ -23,6 +26,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -44,6 +49,7 @@ import com.tesis.aike.AppRoutes
 import com.tesis.aike.ui.home.AppBottomNavigationBar
 import com.tesis.aike.ui.home.BottomNavItem
 import com.tesis.aike.ui.theme.AikeTheme
+import com.tesis.aike.util.TokenManager
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -81,96 +87,114 @@ fun ProfileScreen(navController: NavController, username: String) {
             )
         }
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(innerPadding)
-                .padding(horizontal = 24.dp, vertical = 16.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(innerPadding),
+            contentAlignment = Alignment.Center
         ) {
             if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                CircularProgressIndicator()
             } else if (errorMessage != null) {
-                Text(
-                    text = errorMessage ?: "Error desconocido",
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
+                Text(text = errorMessage ?: "Error desconocido", color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(16.dp))
             } else if (userProfile != null) {
                 val profile = userProfile!!
-                Spacer(modifier = Modifier.height(16.dp))
-                Icon(
-                    imageVector = Icons.Filled.AccountCircle,
-                    contentDescription = "Icono de Perfil",
+                Column(
                     modifier = Modifier
-                        .size(100.dp)
-                        .clip(CircleShape),
-                    tint = Color(0xFFB39DDB)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = profile.name ?: username,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Normal,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-
-                ProfileDetailItem(label = "DNI:", value = profile.dni ?: "No disponible")
-                ProfileDetailItem(label = "TEL:", value = "+54 9 11 3939-8945")
-                ProfileDetailItem(label = "MAIL:", value = profile.email ?: "No disponible")
-                ProfileDetailItem(label = "Pass:", value = "********************")
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                Text(
-                    text = "¿Queres modificar algún dato? Llama al hall",
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-
-                Button(
-                    onClick = {
-                        Toast.makeText(context, "Funcionalidad de llamada no implementada", Toast.LENGTH_SHORT).show()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
-                    modifier = Modifier
-                        .fillMaxWidth(0.9f)
-                        .height(50.dp)
+                        .fillMaxSize()
+                        .padding(horizontal = 24.dp, vertical = 16.dp)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.Call, contentDescription = "Llamar", tint = Color.White)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("LLAMAR A RECEPCIÓN", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
-                }
-                Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
+                    Icon(
+                        imageVector = Icons.Filled.AccountCircle,
+                        contentDescription = "Icono de Perfil",
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(CircleShape),
+                        tint = Color(0xFFB39DDB)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = profile.name ?: username,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    ProfileInfoRow(label = "DNI:", value = profile.dni ?: "No disponible")
+                    ProfileInfoRow(label = "TEL:", value = "N/A (no en DTO)")
+                    ProfileInfoRow(label = "MAIL:", value = profile.email ?: "No disponible")
+                    ProfileInfoRow(label = "Pass:", value = "********************")
 
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Text(
+                        text = "¿Queres modificar algún dato? Llama al hall",
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                    Button(
+                        onClick = {
+                            Toast.makeText(context, "Llamando a recepción...", Toast.LENGTH_SHORT).show()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
+                        modifier = Modifier.fillMaxWidth(0.9f)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Filled.Call, contentDescription = "Llamar", tint = Color.White)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("LLAMAR A RECEPCIÓN", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedButton(
+                        onClick = {
+                            TokenManager.clearAuthData(context)
+                            navController.navigate(AppRoutes.LOGIN_ROUTE) {
+                                popUpTo(AppRoutes.MAIN_APP_GRAPH_ROUTE) {
+                                    inclusive = true
+                                }
+                                launchSingleTop = true
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(0.9f)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar Sesión", tint = MaterialTheme.colorScheme.error)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Cerrar Sesión", color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
             } else {
-                Text("No se pudo cargar la información del perfil.", modifier = Modifier.align(Alignment.CenterHorizontally))
+                Text("No se pudo cargar la información del perfil.", modifier = Modifier.padding(16.dp))
             }
         }
     }
 }
 
 @Composable
-private fun ProfileDetailItem(label: String, value: String) {
-    Column(modifier = Modifier
-        .fillMaxWidth()
-        .padding(vertical = 8.dp)) {
+private fun ProfileInfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.width(80.dp)
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(start = 4.dp)
+            modifier = Modifier.padding(start = 8.dp)
         )
     }
 }
@@ -179,6 +203,6 @@ private fun ProfileDetailItem(label: String, value: String) {
 @Composable
 fun ProfileScreenPreview() {
     AikeTheme {
-        ProfileScreen(navController = rememberNavController(), username = "PedroPreview")
+        ProfileScreen(navController = rememberNavController(), username = "UsuarioPreview")
     }
 }
