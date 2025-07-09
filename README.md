@@ -1,0 +1,3 @@
+AIKE APK INSTALABLE
+
+en app/
