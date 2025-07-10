@@ -19,7 +19,7 @@ object JwtDecoder {
             val decodedString = String(decodedBytes, Charsets.UTF_8)
 
             val jsonObject = Json.parseToJsonElement(decodedString).jsonObject
-            jsonObject["sub"]?.jsonPrimitive?.content
+            jsonObject["s"]?.jsonPrimitive?.content
         } catch (e: Exception) {
             e.printStackTrace()
             null
