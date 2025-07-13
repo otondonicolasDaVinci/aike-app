@@ -1,4 +1,3 @@
-// build.gradle.kts (Module :app)
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -9,12 +8,12 @@ plugins {
 
 android {
     namespace = "com.tesis.aike"
-    compileSdk = 35 // CAMBIO AQUÍ
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.tesis.aike"
         minSdk = 31
-        targetSdk = 35 // CAMBIO AQUÍ
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -51,6 +50,15 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+    applicationVariants.all {
+        val variant = this
+        outputs.all {
+            val output = this
+            val newName = "aike-v${variant.versionName}-${variant.buildType.name}.apk"
+            (output as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName = newName
+        }
+    }
 }
 
 dependencies {
@@ -62,11 +70,9 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
-
     implementation(libs.androidx.compose.material.icons.core)
     implementation(libs.androidx.compose.material.icons.extended)
 
