@@ -16,6 +16,7 @@ googleServicesPlugin = "4.4.2" # O la última versión estable
 playServicesAuth = "21.2.0"  # O la última versión estable
 firebaseBom = "33.1.1" # O la última BOM de Firebase
 coil = "2.6.0"
+mercadopago = "6.2.1"
 
 # Versión del compilador de Compose compatible con tu Kotlin
 # Para Kotlin 2.0.0, Compose Compiler es usualmente 1.5.12 o superior.
@@ -55,6 +56,7 @@ firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.r
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics-ktx" } # ktx y sin versión por el BOM
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth-ktx" } # ktx y sin versión por el BOM
 
+mercadopago-checkout = { group = "com.mercadopago.android.px", name = "checkout", version.ref = "mercadopago" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
 
 [plugins]

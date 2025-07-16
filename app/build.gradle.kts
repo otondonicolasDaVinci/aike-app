@@ -87,6 +87,10 @@ dependencies {
     implementation(libs.firebase.analytics)
 
     implementation(libs.coil.compose)
+    implementation(libs.mercadopago.checkout)
+    testImplementation(libs.junit)
+
+    implementation(libs.coil.compose)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
