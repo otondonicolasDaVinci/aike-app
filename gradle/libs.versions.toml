@@ -15,6 +15,7 @@ androidxLifecycle = "2.8.2"
 googleServicesPlugin = "4.4.2" # O la última versión estable
 playServicesAuth = "21.2.0"  # O la última versión estable
 firebaseBom = "33.1.1" # O la última BOM de Firebase
+coil = "2.6.0"
 
 # Versión del compilador de Compose compatible con tu Kotlin
 # Para Kotlin 2.0.0, Compose Compiler es usualmente 1.5.12 o superior.
@@ -53,6 +54,8 @@ google-play-services-auth = { group = "com.google.android.gms", name = "play-ser
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics-ktx" } # ktx y sin versión por el BOM
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth-ktx" } # ktx y sin versión por el BOM
+
+coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

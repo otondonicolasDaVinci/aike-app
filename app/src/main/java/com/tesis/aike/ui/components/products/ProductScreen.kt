@@ -28,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -39,10 +40,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.tesis.aike.R
 import com.tesis.aike.domain.model.CartItem
 import com.tesis.aike.domain.model.Product
 import com.tesis.aike.ui.components.products.ProductViewModel
+import com.tesis.aike.ui.navigation.AppBottomNavigationBar
+import com.tesis.aike.ui.navigation.BottomNavItem
 import com.tesis.aike.ui.theme.AikeTheme
 import java.text.NumberFormat
 import java.util.Locale
@@ -186,21 +191,21 @@ fun ProductCard(
         shape = RoundedCornerShape(8.dp)
     ) {
         Column {
-            Box(
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(if (product.imageUrl == "null") null else product.imageUrl)
+                    .crossfade(true)
+                    .build(),
+                placeholder = painterResource(id = R.drawable.aike_logo),
+                error = painterResource(id = R.drawable.aike_logo),
+                contentDescription = product.title,
+                contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .height(120.dp)
                     .fillMaxWidth()
                     .background(Color.LightGray)
-                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.aike_logo),
-                    contentDescription = product.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+            )
             Column(Modifier.padding(12.dp)) {
                 Text(product.title, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 16.sp)
                 Text(currencyFormatter.format(product.price), fontSize = 14.sp, color = MaterialTheme.colorScheme.primary)
@@ -225,8 +230,10 @@ fun ProductCard(
                         enabled = quantityInCart > 0,
                         modifier = Modifier.size(36.dp)
                     ) {
-                        Icon(Icons.Filled.RemoveCircleOutline, "Quitar",
-                            tint = if (quantityInCart > 0) MaterialTheme.colorScheme.primary else Color.Gray)
+                        Icon(
+                            Icons.Filled.RemoveCircleOutline, "Quitar",
+                            tint = if (quantityInCart > 0) MaterialTheme.colorScheme.primary else Color.Gray
+                        )
                     }
                     Text(quantityInCart.toString(), fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     IconButton(
@@ -344,20 +351,20 @@ fun CartItemRow(
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(if (cartItem.product.imageUrl == "null") null else cartItem.product.imageUrl)
+                .crossfade(true)
+                .build(),
+            placeholder = painterResource(id = R.drawable.aike_logo),
+            error = painterResource(id = R.drawable.aike_logo),
+            contentDescription = cartItem.product.title,
+            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(60.dp)
                 .background(Color.LightGray, RoundedCornerShape(4.dp))
-                .clip(RoundedCornerShape(4.dp)),
-            contentAlignment = Alignment.Center
-        ){
-            Image(
-                painter = painterResource(id = R.drawable.aike_logo),
-                contentDescription = cartItem.product.title,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
-        }
+                .clip(RoundedCornerShape(4.dp))
+        )
         Spacer(modifier = Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(cartItem.product.title, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -380,6 +387,9 @@ fun CartItemRow(
 @Composable
 fun ProductScreenPreview() {
     AikeTheme {
-        ProductScreen(rootNavController = rememberNavController(), username = "TestUser")
+        ProductScreen(
+            rootNavController = rememberNavController(),
+            username = "TestUser"
+        )
     }
 }
