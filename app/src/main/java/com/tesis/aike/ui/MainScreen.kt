@@ -13,7 +13,7 @@ import com.tesis.aike.ui.home.HomeScreen
 import com.tesis.aike.ui.navigation.AppBottomNavigationBar
 import com.tesis.aike.ui.navigation.BottomNavItem
 import com.tesis.aike.ui.profile.ProfileScreen
-import com.tesis.aike.ui.products.ProductScreen
+import com.tesis.aike.ui.components.products.ProductScreen
 import com.tesis.aike.ui.qrcode.QrCodeScreen
 import com.tesis.aike.ui.reservation.ReservationScreen
 

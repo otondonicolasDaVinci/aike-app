@@ -1,11 +1,10 @@
-package com.tesis.aike.ui.products
+package com.tesis.aike.ui.components.products
 
 import android.annotation.SuppressLint
-import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -33,22 +32,18 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.tesis.aike.R
 import com.tesis.aike.domain.model.CartItem
 import com.tesis.aike.domain.model.Product
-import com.tesis.aike.ui.components.products.ProductViewModel
-import com.tesis.aike.ui.navigation.AppBottomNavigationBar
-import com.tesis.aike.ui.navigation.BottomNavItem
-import com.tesis.aike.ui.theme.AikeTheme
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -60,14 +55,31 @@ fun ProductScreen(
     username: String,
     productViewModel: ProductViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val productsByCategory by productViewModel.productsByCategory.collectAsStateWithLifecycle()
     val totalCartQuantity by productViewModel.totalCartQuantity.collectAsStateWithLifecycle()
     val cartItemsList by productViewModel.cartItems.collectAsStateWithLifecycle()
     val totalCartPrice by productViewModel.totalCartPrice.collectAsStateWithLifecycle()
     val isLoadingProducts by productViewModel.isLoadingProducts.collectAsStateWithLifecycle()
     val productErrorMessage by productViewModel.productErrorMessage.collectAsStateWithLifecycle()
+    val isCreatingPayment by productViewModel.isCreatingPayment.collectAsStateWithLifecycle()
+    val paymentError by productViewModel.paymentError.collectAsStateWithLifecycle()
 
     var showCartPanel by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        productViewModel.paymentUrl.collect { url ->
+            val encodedUrl = URLEncoder.encode(url, StandardCharsets.UTF_8.toString())
+            rootNavController.navigate("payment_webview/$encodedUrl")
+        }
+    }
+
+    LaunchedEffect(paymentError) {
+        paymentError?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            productViewModel.clearPaymentError()
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -82,20 +94,14 @@ fun ProductScreen(
                                 }
                             }
                         ) {
-                            IconButton(onClick = {
-                                showCartPanel = true
-                            }) {
+                            IconButton(onClick = { showCartPanel = true }) {
                                 Icon(
                                     Icons.Filled.ShoppingCart,
                                     contentDescription = "Carrito de compras"
                                 )
                             }
                         }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        titleContentColor = MaterialTheme.colorScheme.onSurface
-                    )
+                    }
                 )
             }
         ) { innerPadding ->
@@ -108,26 +114,14 @@ fun ProductScreen(
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 } else if (productErrorMessage != null) {
                     Text(
-                        text = productErrorMessage ?: "Error cargando productos",
+                        text = productErrorMessage ?: "Error",
                         color = MaterialTheme.colorScheme.error,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(16.dp)
-                    )
-                } else if (productsByCategory.isEmpty()) {
-                    Text(
-                        text = "No hay productos disponibles en este momento.",
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(16.dp)
+                        modifier = Modifier.align(Alignment.Center).padding(16.dp)
                     )
                 } else {
                     LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp),
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         productsByCategory.forEach { (category, products) ->
@@ -143,13 +137,13 @@ fun ProductScreen(
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                                     contentPadding = PaddingValues(bottom = 16.dp)
                                 ) {
-                                    items(products) { product: Product ->
-                                        val quantityInCart = cartItemsList.find { cartItem: CartItem -> cartItem.product.id == product.id }?.quantity ?: 0
+                                    items(products) { product ->
+                                        val quantityInCart = cartItemsList.find { it.product.id == product.id }?.quantity ?: 0
                                         ProductCard(
                                             product = product,
                                             quantityInCart = quantityInCart,
-                                            onAddToCart = { p: Product -> productViewModel.addToCart(p) },
-                                            onRemoveFromCart = { p: Product -> productViewModel.removeFromCart(p) }
+                                            onAddToCart = { productViewModel.addToCart(it) },
+                                            onRemoveFromCart = { productViewModel.removeFromCart(it) }
                                         )
                                     }
                                 }
@@ -165,14 +159,25 @@ fun ProductScreen(
             cartItems = cartItemsList,
             totalPrice = totalCartPrice,
             onDismiss = { showCartPanel = false },
-            onUpdateQuantity = { productId: Long, newQuantity: Int ->
+            onUpdateQuantity = { productId, newQuantity ->
                 productViewModel.updateQuantityInCartPanel(productId, newQuantity)
             },
             onCheckout = {
-                Log.d("ProductScreen", "Checkout clicked!")
+                productViewModel.createPaymentPreferenceForCart()
             },
             modifier = Modifier.align(Alignment.CenterEnd)
         )
+
+        if (isCreatingPayment) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
     }
 }
 
@@ -193,7 +198,7 @@ fun ProductCard(
         Column {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(if (product.imageUrl == "null") null else product.imageUrl)
+                    .data(product.imageUrl.takeIf { it != "null" })
                     .crossfade(true)
                     .build(),
                 placeholder = painterResource(id = R.drawable.aike_logo),
@@ -203,8 +208,6 @@ fun ProductCard(
                 modifier = Modifier
                     .height(120.dp)
                     .fillMaxWidth()
-                    .background(Color.LightGray)
-                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
             )
             Column(Modifier.padding(12.dp)) {
                 Text(product.title, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 16.sp)
@@ -217,7 +220,7 @@ fun ProductCard(
                     overflow = TextOverflow.Ellipsis,
                     lineHeight = 14.sp,
                     color = Color.Gray,
-                    modifier = Modifier.heightIn(min = (14 * 3).dp)
+                    modifier = Modifier.heightIn(min = 42.dp)
                 )
                 Spacer(Modifier.height(8.dp))
                 Row(
@@ -262,19 +265,17 @@ fun CartPanel(
 
     AnimatedVisibility(
         visible = isVisible,
-        enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth }),
-        exit = slideOutHorizontally(targetOffsetX = { fullWidth -> fullWidth }),
+        enter = slideInHorizontally(initialOffsetX = { it }),
+        exit = slideOutHorizontally(targetOffsetX = { it }),
         modifier = modifier
             .fillMaxHeight()
-            .widthIn(max = 320.dp)
+            .widthIn(max = 340.dp)
             .shadow(8.dp)
             .background(MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
+                modifier = Modifier.fillMaxWidth().padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -287,24 +288,20 @@ fun CartPanel(
 
             if (cartItems.isEmpty()) {
                 Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
                     Text("Tu carrito está vacío")
                 }
             } else {
                 LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 12.dp)
+                    modifier = Modifier.weight(1f).padding(horizontal = 12.dp)
                 ) {
-                    items(cartItems) { cartItem: CartItem ->
+                    items(cartItems, key = { it.product.id }) { cartItem ->
                         CartItemRow(
                             cartItem = cartItem,
                             currencyFormatter = currencyFormatter,
-                            onQuantityChange = { newQuantity: Int ->
+                            onQuantityChange = { newQuantity ->
                                 onUpdateQuantity(cartItem.product.id, newQuantity)
                             }
                         )
@@ -315,9 +312,7 @@ fun CartPanel(
 
             HorizontalDivider()
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -326,6 +321,7 @@ fun CartPanel(
             }
             Button(
                 onClick = onCheckout,
+                enabled = cartItems.isNotEmpty(),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
@@ -333,63 +329,8 @@ fun CartPanel(
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00AEEF))
             ) {
-                Text("Pagar por Mercado pago", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("Pagar por Mercado Pago", color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
-    }
-}
-
-@Composable
-fun CartItemRow(
-    cartItem: CartItem,
-    currencyFormatter: NumberFormat,
-    onQuantityChange: (Int) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(if (cartItem.product.imageUrl == "null") null else cartItem.product.imageUrl)
-                .crossfade(true)
-                .build(),
-            placeholder = painterResource(id = R.drawable.aike_logo),
-            error = painterResource(id = R.drawable.aike_logo),
-            contentDescription = cartItem.product.title,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(60.dp)
-                .background(Color.LightGray, RoundedCornerShape(4.dp))
-                .clip(RoundedCornerShape(4.dp))
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(cartItem.product.title, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(currencyFormatter.format(cartItem.product.price), fontSize = 12.sp, color = Color.Gray)
-        }
-        Spacer(modifier = Modifier.width(8.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { onQuantityChange(cartItem.quantity - 1) }, Modifier.size(30.dp)) {
-                Icon(Icons.Filled.Remove, "Quitar", tint = MaterialTheme.colorScheme.primary)
-            }
-            Text(cartItem.quantity.toString(), modifier = Modifier.padding(horizontal = 4.dp))
-            IconButton(onClick = { onQuantityChange(cartItem.quantity + 1) }, Modifier.size(30.dp)) {
-                Icon(Icons.Filled.Add, "Agregar", tint = MaterialTheme.colorScheme.primary)
-            }
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun ProductScreenPreview() {
-    AikeTheme {
-        ProductScreen(
-            rootNavController = rememberNavController(),
-            username = "TestUser"
-        )
     }
 }

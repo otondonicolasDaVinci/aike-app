@@ -87,6 +87,7 @@ dependencies {
     implementation(libs.firebase.analytics)
 
     implementation(libs.coil.compose)
+    implementation(libs.androidx.browser)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
