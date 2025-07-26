@@ -70,7 +70,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val response = chatService.sendMessage(textToSend, token)
                 if (response != null) {
-                    val aiMessage = ChatMessage(text = response.respuesta, isFromUser = false)
+                    val aiMessage = ChatMessage(text = response.lines, isFromUser = false)
                     _messages.update { currentMessages -> currentMessages + aiMessage }
 
                     response.nuevoToken?.let { nuevoTokenRecibido ->
