@@ -31,7 +31,8 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     private val _productsByCategory = MutableStateFlow<Map<String, List<Product>>>(emptyMap())
     val productsByCategory: StateFlow<Map<String, List<Product>>> = _productsByCategory.asStateFlow()
 
-    private val _cartItemsMap = MutableStateFlow<Map<String, CartItem>>(emptyMap())
+    private val _cartItemsMap = MutableStateFlow<Map<Long, CartItem>>(emptyMap())
+
     val cartItems: StateFlow<List<CartItem>> = _cartItemsMap
         .map { it.values.toList().sortedBy { item -> item.product.title } }
         .stateIn(
@@ -61,8 +62,6 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
 
     private val _productErrorMessage = MutableStateFlow<String?>(null)
     val productErrorMessage: StateFlow<String?> = _productErrorMessage.asStateFlow()
-
-
 
     private val _isCreatingPayment = MutableStateFlow(false)
     val isCreatingPayment: StateFlow<Boolean> = _isCreatingPayment.asStateFlow()
@@ -142,11 +141,11 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     fun addToCart(product: Product) {
         _cartItemsMap.update { currentCart ->
             val mutableCart = currentCart.toMutableMap()
-            val cartItem = mutableCart[product.id.toString()]
+            val cartItem = mutableCart[product.id]
             if (cartItem != null) {
-                mutableCart[product.id.toString()] = cartItem.copy(quantity = cartItem.quantity + 1)
+                mutableCart[product.id] = cartItem.copy(quantity = cartItem.quantity + 1)
             } else {
-                mutableCart[product.id.toString()] = CartItem(product = product, quantity = 1)
+                mutableCart[product.id] = CartItem(product = product, quantity = 1)
             }
             mutableCart
         }
@@ -155,12 +154,12 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     fun removeFromCart(product: Product) {
         _cartItemsMap.update { currentCart ->
             val mutableCart = currentCart.toMutableMap()
-            val cartItem = mutableCart[product.id.toString()]
+            val cartItem = mutableCart[product.id]
             if (cartItem != null) {
                 if (cartItem.quantity > 1) {
-                    mutableCart[product.id.toString()] = cartItem.copy(quantity = cartItem.quantity - 1)
+                    mutableCart[product.id] = cartItem.copy(quantity = cartItem.quantity - 1)
                 } else {
-                    mutableCart.remove(product.id.toString())
+                    mutableCart.remove(product.id)
                 }
             }
             mutableCart
@@ -170,12 +169,12 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     fun updateQuantityInCartPanel(productId: Long, newQuantity: Int) {
         _cartItemsMap.update { currentCart ->
             val mutableCart = currentCart.toMutableMap()
-            val cartItem = mutableCart[productId.toString()]
+            val cartItem = mutableCart[productId]
             if (cartItem != null) {
                 if (newQuantity > 0) {
-                    mutableCart[productId.toString()] = cartItem.copy(quantity = newQuantity)
+                    mutableCart[productId] = cartItem.copy(quantity = newQuantity)
                 } else {
-                    mutableCart.remove(productId.toString())
+                    mutableCart.remove(productId)
                 }
             }
             mutableCart

@@ -2,9 +2,6 @@ package com.tesis.aike.ui.components.products
 
 import android.annotation.SuppressLint
 import android.widget.Toast
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,10 +9,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddCircleOutline
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
@@ -23,8 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -40,7 +32,6 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.tesis.aike.R
-import com.tesis.aike.domain.model.CartItem
 import com.tesis.aike.domain.model.Product
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -246,90 +237,6 @@ fun ProductCard(
                         Icon(Icons.Filled.AddCircleOutline, "Agregar", tint = MaterialTheme.colorScheme.primary)
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun CartPanel(
-    isVisible: Boolean,
-    cartItems: List<CartItem>,
-    totalPrice: Double,
-    onDismiss: () -> Unit,
-    onUpdateQuantity: (productId: Long, newQuantity: Int) -> Unit,
-    onCheckout: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val currencyFormatter = remember { NumberFormat.getCurrencyInstance(Locale("es", "AR")) }
-
-    AnimatedVisibility(
-        visible = isVisible,
-        enter = slideInHorizontally(initialOffsetX = { it }),
-        exit = slideOutHorizontally(targetOffsetX = { it }),
-        modifier = modifier
-            .fillMaxHeight()
-            .widthIn(max = 340.dp)
-            .shadow(8.dp)
-            .background(MaterialTheme.colorScheme.surface)
-    ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Tu carrito", style = MaterialTheme.typography.titleLarge)
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.Filled.Close, contentDescription = "Cerrar carrito")
-                }
-            }
-            HorizontalDivider()
-
-            if (cartItems.isEmpty()) {
-                Box(
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Tu carrito está vacío")
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.weight(1f).padding(horizontal = 12.dp)
-                ) {
-                    items(cartItems, key = { it.product.id }) { cartItem ->
-                        CartItemRow(
-                            cartItem = cartItem,
-                            currencyFormatter = currencyFormatter,
-                            onQuantityChange = { newQuantity ->
-                                onUpdateQuantity(cartItem.product.id, newQuantity)
-                            }
-                        )
-                        HorizontalDivider()
-                    }
-                }
-            }
-
-            HorizontalDivider()
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Total:", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(currencyFormatter.format(totalPrice), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            }
-            Button(
-                onClick = onCheckout,
-                enabled = cartItems.isNotEmpty(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
-                    .height(50.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00AEEF))
-            ) {
-                Text("Pagar por Mercado Pago", color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
     }
