@@ -24,7 +24,7 @@ class PaymentApiService(private val client: HttpClient = KtorClientProvider.clie
         request: CartPaymentRequest
     ): PaymentResponseMercadoPago? {
         if (token.isNullOrBlank()) {
-            println("PaymentApiService - Error: Token no proporcionado para crear pago.")
+            println("PaymentApiService - Error: Token no proporcionado.")
             return null
         }
 
@@ -39,11 +39,7 @@ class PaymentApiService(private val client: HttpClient = KtorClientProvider.clie
                 response.body<PaymentResponseMercadoPago>()
             } else {
                 println("PaymentApiService - Error: ${response.status.value} - ${response.status.description}")
-                try {
-                    println("PaymentApiService - Cuerpo del error: ${response.bodyAsText()}")
-                } catch (readEx: Exception) {
-                    println("PaymentApiService - No se pudo leer cuerpo del error.")
-                }
+                println("PaymentApiService - Cuerpo del error: ${response.bodyAsText()}")
                 null
             }
         } catch (e: Exception) {

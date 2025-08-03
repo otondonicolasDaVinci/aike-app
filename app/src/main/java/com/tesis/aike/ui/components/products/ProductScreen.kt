@@ -1,7 +1,12 @@
 package com.tesis.aike.ui.components.products
 
 import android.annotation.SuppressLint
+import android.net.Uri
 import android.widget.Toast
+import androidx.browser.customtabs.CustomTabsIntent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,15 +14,16 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircleOutline
-import androidx.compose.material.icons.filled.RemoveCircleOutline
-import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -32,9 +38,8 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.tesis.aike.R
+import com.tesis.aike.domain.model.CartItem
 import com.tesis.aike.domain.model.Product
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -47,6 +52,8 @@ fun ProductScreen(
     productViewModel: ProductViewModel = viewModel()
 ) {
     val context = LocalContext.current
+    val colorScheme = MaterialTheme.colorScheme
+
     val productsByCategory by productViewModel.productsByCategory.collectAsStateWithLifecycle()
     val totalCartQuantity by productViewModel.totalCartQuantity.collectAsStateWithLifecycle()
     val cartItemsList by productViewModel.cartItems.collectAsStateWithLifecycle()
@@ -60,8 +67,10 @@ fun ProductScreen(
 
     LaunchedEffect(Unit) {
         productViewModel.paymentUrl.collect { url ->
-            val encodedUrl = URLEncoder.encode(url, StandardCharsets.UTF_8.toString())
-            rootNavController.navigate("payment_webview/$encodedUrl")
+            val builder = CustomTabsIntent.Builder()
+            builder.setToolbarColor(colorScheme.primary.toArgb())
+            val customTabsIntent = builder.build()
+            customTabsIntent.launchUrl(context, Uri.parse(url))
         }
     }
 
@@ -86,10 +95,7 @@ fun ProductScreen(
                             }
                         ) {
                             IconButton(onClick = { showCartPanel = true }) {
-                                Icon(
-                                    Icons.Filled.ShoppingCart,
-                                    contentDescription = "Carrito de compras"
-                                )
+                                Icon(Icons.Filled.ShoppingCart, contentDescription = "Carrito de compras")
                             }
                         }
                     }
@@ -133,8 +139,8 @@ fun ProductScreen(
                                         ProductCard(
                                             product = product,
                                             quantityInCart = quantityInCart,
-                                            onAddToCart = { productViewModel.addToCart(it) },
-                                            onRemoveFromCart = { productViewModel.removeFromCart(it) }
+                                            onAddToCart = { productViewModel.addToCart(product) },
+                                            onRemoveFromCart = { productViewModel.removeFromCart(product) }
                                         )
                                     }
                                 }
