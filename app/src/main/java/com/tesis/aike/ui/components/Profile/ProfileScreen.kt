@@ -74,7 +74,7 @@ fun ProfileScreen(rootNavController: NavController, username: String) {
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 ProfileInfoRow(label = "DNI:", value = profile.dni ?: "No disponible")
-                ProfileInfoRow(label = "TEL:", value = "N/A (no en DTO)")
+                //ProfileInfoRow(label = "TEL:", value = "N/A (no en DTO)")
                 ProfileInfoRow(label = "MAIL:", value = profile.email ?: "No disponible")
                 ProfileInfoRow(label = "Pass:", value = "********************")
 

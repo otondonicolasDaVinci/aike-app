@@ -78,7 +78,7 @@ fun ReservationScreen(rootNavController: NavController, username: String) {
                 Text("Check in: $checkInDate - Check out: $checkOutDate", style = MaterialTheme.typography.bodyLarge)
                 Spacer(modifier = Modifier.height(8.dp))
 
-                InfoRow(label = "Huespedes:", value = "N/A (no en DTO)")
+                //InfoRow(label = "Huespedes:", value = "N/A (no en DTO)")
                 InfoRow(label = "Cabaña:", value = reservation.cabin?.name ?: "N/A")
                 InfoRow(label = "Estado:", value = reservation.status ?: "N/A")
 
